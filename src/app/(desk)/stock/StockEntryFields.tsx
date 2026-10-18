@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { ArrowDownToLine, ArrowLeftRight, ArrowUpFromLine, PackagePlus, SlidersHorizontal, Undo2 } from "lucide-react";
 import { Alert, Field, FormGrid, Input, Radio, Select } from "@/components/ui";
-import { kgLabel, stockLabel } from "@/lib/format";
+import { kgLabel, shortName, stockLabel } from "@/lib/format";
 
 export type EntryProduct = { id: string; name: string; packing: string; packKg: number | null; reorderKg: number; balances: Record<string, number> };
 export type EntryWarehouse = { id: string; name: string };
@@ -21,7 +21,6 @@ export const ENTRY_TYPES = [
 
 export const entryType = (key: string) => ENTRY_TYPES.find((x) => x.key === key) ?? ENTRY_TYPES[0];
 export const isOutType = (type: string) => type === "SALE" || type === "TRANSFER";
-export const shortName = (name: string) => name.replace(/ warehouse$/i, "");
 
 /** Product / warehouse / type selection shared by the entry page and the dialog. */
 export function useStockEntry(data: EntryData, values: Record<string, string>, initialType: string, initialProduct?: string) {

@@ -65,3 +65,6 @@ export const initials = (name: string) =>
     .slice(0, 2)
     .map((w) => w[0]!.toUpperCase())
     .join("") || "?";
+
+/** "Pashamylaram warehouse" → "Pashamylaram" */
+export const shortName = (name: string) => name.replace(/ warehouse$/i, "");

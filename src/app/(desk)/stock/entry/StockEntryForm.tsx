@@ -4,9 +4,9 @@ import { useActionState, type ReactNode } from "react";
 import { Boxes } from "lucide-react";
 import { Card, Chip, Empty, FormActions, FormError, List, ListRow, ProgressBar, RadioCards, SplitLayout, SubmitButton } from "@/components/ui";
 import { initialFormState } from "@/lib/form-state";
-import { kgLabel, stockLabel } from "@/lib/format";
+import { kgLabel, shortName, stockLabel } from "@/lib/format";
 import { recordMovementAction } from "../actions";
-import { ENTRY_TYPES, entryType, isOutType, shortName, StockEntryFields, useStockEntry, type EntryData, type EntryProduct, type EntryWarehouse } from "../StockEntryFields";
+import { ENTRY_TYPES, entryType, isOutType, StockEntryFields, useStockEntry, type EntryData, type EntryProduct, type EntryWarehouse } from "../StockEntryFields";
 
 const TYPE_OPTIONS = ENTRY_TYPES.map((x) => ({ value: x.key, title: x.label, description: x.hint, icon: <x.icon className="h-4 w-4" /> }));
 

@@ -4,10 +4,9 @@ import { ArrowDownToLine, ArrowLeftRight, ArrowUpFromLine, Boxes, Download, Pack
 import { requireUser } from "@/server/auth";
 import type { stockOverview } from "@/server/stock";
 import { Alert, ButtonAnchor, Chip, DataTable, Empty, IconLink, PageHeader, ProgressBar, SearchField, Stat, StatGrid, TableCard, TableTabs, type Column } from "@/components/ui";
-import { kgLabel, stockLabel } from "@/lib/format";
+import { kgLabel, shortName, stockLabel } from "@/lib/format";
 import { stockEntryData } from "./entry-data";
 import { StockEntryButton, StockEntryIconButton, StockEntryProvider } from "./StockEntryDialog";
-import { shortName } from "./StockEntryFields";
 
 export const metadata: Metadata = { title: "Stock on hand" };
 
