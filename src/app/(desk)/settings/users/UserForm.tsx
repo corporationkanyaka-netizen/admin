@@ -15,7 +15,7 @@ export default function UserForm({ user, isSelf = false }: { user?: User; isSelf
   const v = state.values ?? {};
 
   return (
-    <form action={action} className="grid items-start gap-3 px-4 py-4 md:grid-cols-[1.2fr_1.5fr_0.8fr_1.6fr_auto]">
+    <form action={action} className="grid items-start gap-3 px-3 py-3 md:grid-cols-[1.2fr_1.5fr_0.8fr_1.6fr_auto]">
       {user && <input type="hidden" name="id" value={user.id} />}
       <div>
         <input name="name" defaultValue={v.name ?? user?.name} placeholder="Name" className="field" aria-label="Name" />

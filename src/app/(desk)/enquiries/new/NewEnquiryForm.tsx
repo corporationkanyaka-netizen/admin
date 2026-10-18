@@ -15,10 +15,10 @@ export default function NewEnquiryForm({ products, defaults }: { products: Produ
   const e = state.errors ?? {};
 
   return (
-    <form action={action} className="card space-y-5 p-5">
+    <form action={action} className="card space-y-3 p-4">
       <div>
         <h2 className="mb-3 text-sm font-semibold text-ink-900">Customer</h2>
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-3 sm:grid-cols-2">
           <Field label="Contact person *" error={e.name}>
             <input name="name" defaultValue={v.name} className="field" autoFocus />
           </Field>
@@ -34,9 +34,9 @@ export default function NewEnquiryForm({ products, defaults }: { products: Produ
         </div>
       </div>
 
-      <div className="border-t border-line pt-5">
+      <div className="border-t border-line pt-3">
         <h2 className="mb-3 text-sm font-semibold text-ink-900">Requirement</h2>
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-3 sm:grid-cols-2">
           <Field label="Product" error={e.productSlug}>
             <select name="productSlug" defaultValue={v.productSlug ?? ""} className="field">
               <option value="">Other / not in list</option>
@@ -75,7 +75,7 @@ export default function NewEnquiryForm({ products, defaults }: { products: Produ
         </div>
       </div>
 
-      <div className="flex justify-end gap-2 border-t border-line pt-4">
+      <div className="flex justify-end gap-2 border-t border-line pt-3">
         <SubmitButton pendingText="Saving…">Save enquiry</SubmitButton>
       </div>
     </form>

@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { ArrowDownToLine, ArrowUpFromLine } from "lucide-react";
+import { ArrowDownToLine, ArrowUpFromLine, Boxes } from "lucide-react";
 import { prisma } from "@/server/db";
 import { requireUser } from "@/server/auth";
-import { ButtonLink, Card, Empty, Flash, PageHeader, Stat } from "@/components/ui";
+import { ButtonLink, Card, Empty, Flash, RecordHeader, Stat } from "@/components/ui";
 import LedgerTable from "@/components/LedgerTable";
 import { kgLabel, stockLabel } from "@/lib/format";
 import { isUuid } from "@/lib/ids";
@@ -37,10 +37,15 @@ export default async function ProductStockPage({ params, searchParams }: { param
   return (
     <>
       {saved && <Flash>Saved. Stock updated.</Flash>}
-      <PageHeader
+      <RecordHeader
         back={{ href: "/stock", label: "Stock on hand" }}
+        avatar={
+          <span className="grid h-10 w-10 place-items-center rounded-md bg-brand-50 text-brand-700">
+            <Boxes className="h-5 w-5" />
+          </span>
+        }
         title={product.name}
-        subtitle={`${product.make} · ${product.packing}${product.hsnCode ? ` · HSN ${product.hsnCode}` : ""} · GST ${Number(product.gstRate)}%`}
+        meta={[product.make, product.packing, `GST ${Number(product.gstRate)}%`, product.hsnCode ? `HSN ${product.hsnCode}` : "HSN not set"]}
         actions={
           <>
             <ButtonLink href={`/stock/entry?type=PURCHASE&product=${product.id}`} variant="secondary">
@@ -53,7 +58,7 @@ export default async function ProductStockPage({ params, searchParams }: { param
         }
       />
 
-      <div className="mb-5 grid grid-cols-2 gap-3 md:grid-cols-4">
+      <div className="mb-3 grid grid-cols-2 gap-2 md:grid-cols-4">
         <Stat label="Total in stock" value={stockLabel(running, product.packKg)} hint={kgLabel(running)} tone={reorder > 0 && running < reorder ? "alert" : "default"} />
         {warehouses.map((w, i) => (
           <Stat key={w.id} label={w.name} value={stockLabel(perWarehouse[i], product.packKg)} hint={kgLabel(perWarehouse[i])} />

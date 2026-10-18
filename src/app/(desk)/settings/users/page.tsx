@@ -17,7 +17,7 @@ export default async function UsersPage() {
         title="Users"
         subtitle="Who can sign in to Kanyaka Desk (email + password + emailed code), and who gets the website's alert emails. New users are emailed a link to set their password."
       />
-      <Card title="Add a user" className="mb-5" pad={false}>
+      <Card title="Add a user" className="mb-3" pad={false}>
         <UserForm />
       </Card>
       <Card title={`${users.length} users`} pad={false}>

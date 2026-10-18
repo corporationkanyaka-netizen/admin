@@ -1,6 +1,7 @@
 @import "tailwindcss";
 
-/* Kanyaka Desk — same brand tokens as the website (ink navy, lab paper, brand cyan). */
+/* Kanyaka Desk — Material Design 3 concepts (app bar, navigation drawer, elevation, chips, dense data tables)
+   on the Kanyaka brand tokens (ink navy + brand cyan). */
 
 @theme {
   --radius-md: 6px;
@@ -15,12 +16,14 @@
   --color-ink-700: #13294a;
   --color-ink-600: #1d3a63;
 
-  --color-paper: #f5f4ef;
-  --color-paper-2: #ecebe4;
-  --color-line: #dedcd3;
+  /* App surfaces (Material "surface" / "surface container") */
+  --color-paper: #f1f4f8;
+  --color-paper-2: #e8ecf2;
+  --color-line: #e2e6ec;
 
-  --color-brand-50: #f0f9ff;
-  --color-brand-100: #e0f2fe;
+  --color-brand-50: #eef8fe;
+  --color-brand-100: #d9effc;
+  --color-brand-200: #b3e0f8;
   --color-brand-300: #7dd8f6;
   --color-brand-400: #38bdf8;
   --color-brand-500: #0ea5e9;
@@ -28,6 +31,11 @@
   --color-brand-700: #0369a1;
 
   --color-signal: #dc2626;
+
+  /* Material elevation levels */
+  --shadow-e1: 0 1px 2px rgba(16, 24, 40, 0.06), 0 1px 3px 1px rgba(16, 24, 40, 0.04);
+  --shadow-e2: 0 1px 2px rgba(16, 24, 40, 0.08), 0 2px 6px 2px rgba(16, 24, 40, 0.06);
+  --shadow-e3: 0 4px 8px 3px rgba(16, 24, 40, 0.08), 0 1px 3px rgba(16, 24, 40, 0.1);
 }
 
 @layer base {
@@ -39,12 +47,13 @@
     background-color: var(--color-paper);
     color: #0b1626;
     font-family: var(--font-sans);
+    font-size: 14px;
     font-feature-settings: "cv11", "ss01";
   }
 
   h1, h2, h3, h4 {
     font-family: var(--font-display);
-    letter-spacing: -0.02em;
+    letter-spacing: -0.015em;
     text-wrap: balance;
   }
 
@@ -58,37 +67,29 @@
     outline-offset: 2px;
     border-radius: var(--radius-md);
   }
-
-  input[type="number"]::-webkit-inner-spin-button,
-  input[type="number"]::-webkit-outer-spin-button {
-    opacity: 0.4;
-  }
 }
 
 @layer components {
-  /* Form controls — one look everywhere */
+  /* Outlined text field (Material) — one look everywhere */
   .field {
-    @apply block w-full rounded-md border border-line bg-white px-3 py-2 text-sm text-ink-900 shadow-[0_1px_0_rgba(11,22,38,0.03)] outline-none transition placeholder:text-slate-400 focus:border-brand-500 focus:ring-3 focus:ring-brand-500/15 disabled:bg-paper-2 disabled:text-slate-500;
+    @apply block w-full rounded-md border border-[#cfd6df] bg-white px-2.5 py-1.5 text-sm text-ink-900 outline-none transition placeholder:text-slate-400 hover:border-slate-400 focus:border-brand-600 focus:ring-2 focus:ring-brand-500/20 disabled:bg-paper-2 disabled:text-slate-500;
   }
   .label {
-    @apply mb-1.5 block text-xs font-medium text-slate-600;
+    @apply mb-1 block text-[11px] font-medium uppercase tracking-wide text-slate-500;
   }
+  /* Elevated surface */
   .card {
-    @apply rounded-md border border-line bg-white;
+    @apply rounded-md bg-white shadow-e1;
   }
   .num {
     font-variant-numeric: tabular-nums;
   }
 }
 
-/* Slim scrollbars, like the website */
+/* Slim scrollbars */
 .scroll-thin {
   scrollbar-width: thin;
   scrollbar-color: rgba(11, 22, 38, 0.18) transparent;
-}
-.scroll-thin-dark {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
 }
 
 /* Printing a quotation: only the document, on A4 */
@@ -102,6 +103,10 @@
   }
   body {
     background: #fff !important;
+  }
+  .print-main {
+    padding: 0 !important;
+    margin: 0 !important;
   }
   .print-sheet {
     box-shadow: none !important;

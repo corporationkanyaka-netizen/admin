@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import { notFound } from "next/navigation";
-import { CheckCircle2, Mail, XCircle } from "lucide-react";
+import { CheckCircle2, FileText, Mail, XCircle } from "lucide-react";
 import { prisma } from "@/server/db";
 import { requireUser } from "@/server/auth";
 import { companyInfo } from "@/data/company";
-import { Card, Flash, PageHeader, QuoteBadge } from "@/components/ui";
+import { Card, Flash, QuoteBadge, RecordHeader } from "@/components/ui";
 import SubmitButton from "@/components/SubmitButton";
 import PrintButton from "@/components/PrintButton";
 import { date, dateTime, inr, phone, qty } from "@/lib/format";
@@ -44,18 +44,20 @@ export default async function QuotePage({ params, searchParams }: { params: Prom
       <div className="no-print">
         {done && DONE[done] && <Flash>{DONE[done]}</Flash>}
         {error && <Flash tone="error">{error}</Flash>}
-        <PageHeader
+        <RecordHeader
           back={{ href: `/enquiries/${e.id}`, label: `${e.companyName} · ${e.reference}` }}
-          title={
-            <span className="inline-flex items-center gap-3">
-              {q.quoteNumber} <QuoteBadge status={q.status} />
+          avatar={
+            <span className="grid h-10 w-10 place-items-center rounded-md bg-indigo-50 text-indigo-700">
+              <FileText className="h-5 w-5" />
             </span>
           }
-          subtitle={`Created ${dateTime(q.createdAt)} by ${q.createdBy ?? "staff"}${q.sentAt ? ` · emailed ${dateTime(q.sentAt)}` : ""}`}
+          title={<span className="font-mono">{q.quoteNumber}</span>}
+          badges={<QuoteBadge status={q.status} />}
+          meta={[e.companyName, `Created ${dateTime(q.createdAt)} by ${q.createdBy ?? "staff"}`, q.sentAt ? `Emailed ${dateTime(q.sentAt)}` : "Not sent yet", <span key="t" className="num font-semibold text-ink-900">{inr(q.total)}</span>]}
           actions={<PrintButton title={`${q.quoteNumber} ${e.companyName}`} />}
         />
 
-        <div className="mb-5 grid gap-4 md:grid-cols-2">
+        <div className="mb-3 grid grid-cols-1 gap-3 md:grid-cols-2">
           {(q.status === "DRAFT" || q.status === "SENT") && (
             <Card title={q.status === "DRAFT" ? "Send to customer" : "Email again"}>
               {e.email ? (
@@ -102,7 +104,7 @@ export default async function QuotePage({ params, searchParams }: { params: Prom
       </div>
 
       {/* The document — what prints */}
-      <article className="print-sheet card mx-auto max-w-[820px] p-6 text-sm sm:p-10">
+      <article className="print-sheet card mx-auto max-w-[820px] p-6 text-sm sm:p-9">
         <header className="flex flex-wrap items-start justify-between gap-6 border-b-2 border-ink-900 pb-5">
           <div className="flex items-center gap-3">
             <Image src="/icon.png" alt="" width={52} height={52} className="rounded-md" />
@@ -122,7 +124,7 @@ export default async function QuotePage({ params, searchParams }: { params: Prom
           </div>
         </header>
 
-        <div className="mt-5 flex flex-wrap justify-between gap-6">
+        <div className="mt-3 flex flex-wrap justify-between gap-6">
           <div>
             <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Quotation for</div>
             <div className="mt-1 font-medium text-ink-950">{e.companyName}</div>
@@ -218,7 +220,7 @@ export default async function QuotePage({ params, searchParams }: { params: Prom
           )}
         </div>
 
-        <footer className="mt-10 flex items-end justify-between gap-6 border-t border-line pt-4 text-xs text-slate-500">
+        <footer className="mt-10 flex items-end justify-between gap-6 border-t border-line pt-3 text-xs text-slate-500">
           <p className="max-w-md">Prices are subject to the manufacturer&apos;s batch COA and stock at the time of order. {companyInfo.motto}</p>
           <div className="text-right">
             <div className="h-10" />

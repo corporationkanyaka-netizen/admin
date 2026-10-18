@@ -85,7 +85,7 @@ export default function QuoteBuilder({
   const err = (k: string) => errors[k] && <p className="mt-1 text-xs text-rose-600">{errors[k]}</p>;
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-3">
       <section className="card overflow-hidden">
         <div className="hidden grid-cols-[minmax(0,2.2fr)_0.8fr_0.8fr_1fr_0.6fr_1fr_36px] gap-2 border-b border-line bg-paper/60 px-4 py-2 text-[11px] font-semibold uppercase tracking-wider text-slate-500 md:grid">
           <span>Item</span>
@@ -98,7 +98,7 @@ export default function QuoteBuilder({
         </div>
         <ul className="divide-y divide-line/70">
           {lines.map((l, i) => (
-            <li key={l.key} className="grid grid-cols-2 gap-2 px-4 py-3 md:grid-cols-[minmax(0,2.2fr)_0.8fr_0.8fr_1fr_0.6fr_1fr_36px] md:items-start">
+            <li key={l.key} className="grid grid-cols-2 gap-2 px-3 py-2 md:grid-cols-[minmax(0,2.2fr)_0.8fr_0.8fr_1fr_0.6fr_1fr_36px] md:items-start">
               <div className="col-span-2 space-y-1.5 md:col-span-1">
                 <select value={l.productSlug ?? ""} onChange={(e) => pickProduct(l.key, e.target.value)} className="field py-1.5 text-xs">
                   <option value="">Custom item</option>
@@ -140,7 +140,7 @@ export default function QuoteBuilder({
             </li>
           ))}
         </ul>
-        <div className="flex flex-wrap items-start justify-between gap-4 border-t border-line bg-paper/40 px-4 py-3">
+        <div className="flex flex-wrap items-start justify-between gap-3 border-t border-line bg-paper/40 px-3 py-2">
           <button
             type="button"
             onClick={() => setLines((ls) => [...ls, { key: nextKey++, productSlug: null, description: "", quantity: "", unit: "MT", unitPrice: "", gstRate: "18" }])}
@@ -171,7 +171,7 @@ export default function QuoteBuilder({
         </div>
       </section>
 
-      <section className="card grid gap-4 p-4 sm:grid-cols-2">
+      <section className="card grid gap-3 p-4 sm:grid-cols-2">
         <div>
           <label className="label">Valid until</label>
           <input type="date" value={validUntil} onChange={(e) => setValidUntil(e.target.value)} className="field" />

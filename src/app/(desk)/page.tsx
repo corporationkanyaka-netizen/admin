@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowDownToLine, ArrowUpFromLine, Inbox, MessageCircle, Plus, TriangleAlert } from "lucide-react";
+import { ArrowDownToLine, ArrowUpFromLine, FileText, Hourglass, Inbox, MessageCircle, Plus, TriangleAlert, Trophy } from "lucide-react";
 import { prisma } from "@/server/db";
 import { requireUser } from "@/server/auth";
 import { stockOverview } from "@/server/stock";
@@ -54,14 +54,14 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
         }
       />
 
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Stat label="Waiting for a reply" value={waitingCount} tone={waitingCount ? "alert" : "good"} hint={overdue ? `${overdue} older than a day` : waitingCount ? "Reply today" : "All caught up"} href="/enquiries?status=NEW" />
-        <Stat label="In progress" value={openCount} hint="Contacted or quoted" href="/enquiries?status=open" />
-        <Stat label="Quoted this month" value={inr(quotedThisMonth._sum.total ?? 0, 0)} hint={`${quotedThisMonth._count} ${quotedThisMonth._count === 1 ? "quotation" : "quotations"} · ${enquiriesThisMonth} ${enquiriesThisMonth === 1 ? "enquiry" : "enquiries"}`} href="/quotes" />
-        <Stat label="Won this month" value={wonThisMonth} tone={wonThisMonth ? "good" : "default"} hint={low.length ? `${low.length} ${low.length === 1 ? "product" : "products"} low on stock` : "Stock levels OK"} href="/enquiries?status=WON" />
+      <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
+        <Stat icon={<Inbox className="h-4 w-4" />} label="Waiting for a reply" value={waitingCount} tone={waitingCount ? "alert" : "good"} hint={overdue ? `${overdue} older than a day` : waitingCount ? "Reply today" : "All caught up"} href="/enquiries?status=NEW" />
+        <Stat icon={<Hourglass className="h-4 w-4" />} label="In progress" value={openCount} hint="Contacted or quoted" href="/enquiries?status=open" />
+        <Stat icon={<FileText className="h-4 w-4" />} label="Quoted this month" value={inr(quotedThisMonth._sum.total ?? 0, 0)} hint={`${quotedThisMonth._count} ${quotedThisMonth._count === 1 ? "quotation" : "quotations"} · ${enquiriesThisMonth} ${enquiriesThisMonth === 1 ? "enquiry" : "enquiries"}`} href="/quotes" />
+        <Stat icon={<Trophy className="h-4 w-4" />} label="Won this month" value={wonThisMonth} tone={wonThisMonth ? "good" : "default"} hint={low.length ? `${low.length} ${low.length === 1 ? "product" : "products"} low on stock` : "Stock levels OK"} href="/enquiries?status=WON" />
       </div>
 
-      <div className="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-3">
+      <div className="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-3">
         <Card
           className="lg:col-span-2"
           title="Waiting for a reply"
@@ -80,7 +80,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
             <ul className="divide-y divide-line/70">
               {waiting.map((e) => (
                 <li key={e.id}>
-                  <Link href={`/enquiries/${e.id}`} className="flex items-start gap-3 px-4 py-3 transition hover:bg-paper/60">
+                  <Link href={`/enquiries/${e.id}`} className="flex items-start gap-3 px-3 py-2 transition hover:bg-paper/60">
                     <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${e.createdAt < istDayStart(1) ? "bg-rose-500" : "bg-sky-500"}`} />
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-baseline gap-x-2">
@@ -121,7 +121,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
             <ul className="divide-y divide-line/70">
               {low.slice(0, 7).map((r) => (
                 <li key={r.product.id}>
-                  <Link href={`/stock/${r.product.id}`} className="flex items-center justify-between gap-3 px-4 py-2.5 text-sm hover:bg-paper/60">
+                  <Link href={`/stock/${r.product.id}`} className="flex items-center justify-between gap-3 px-3 py-2 text-sm hover:bg-paper/60">
                     <span className="truncate text-ink-900">{r.product.name}</span>
                     <span className={`num shrink-0 font-medium ${r.out ? "text-rose-600" : "text-amber-700"}`}>{stockLabel(r.total, r.product.packKg)}</span>
                   </Link>
@@ -142,7 +142,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
             <ul className="divide-y divide-line/70">
               {activity.map((a) => (
                 <li key={a.id}>
-                  <Link href={`/enquiries/${a.enquiry.id}`} className="flex items-start gap-3 px-4 py-2.5 text-sm hover:bg-paper/60">
+                  <Link href={`/enquiries/${a.enquiry.id}`} className="flex items-start gap-3 px-3 py-2 text-sm hover:bg-paper/60">
                     <div className="min-w-0 flex-1">
                       <span className="font-medium text-ink-900">{ACTIVITY[a.type] ?? a.type}</span>
                       {a.toStatus && a.type === "STATUS_CHANGED" && (
@@ -176,7 +176,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
           ) : (
             <ul className="divide-y divide-line/70">
               {chats.map((c) => (
-                <li key={c.id} className="px-4 py-2.5 text-sm">
+                <li key={c.id} className="px-3 py-2 text-sm">
                   <div className="flex items-baseline justify-between gap-2">
                     <span className="truncate font-medium text-ink-900">{c.company ? `${c.name} · ${c.company}` : c.name}</span>
                     <span className="shrink-0 text-xs text-slate-500">{ago(c.createdAt)}</span>

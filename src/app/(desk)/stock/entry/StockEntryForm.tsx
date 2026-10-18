@@ -49,7 +49,7 @@ export default function StockEntryForm({
   const partyLabel = type === "PURCHASE" ? "Supplier" : type === "SALE" || type === "RETURN" ? "Customer" : null;
 
   return (
-    <form action={action} className="space-y-5">
+    <form action={action} className="space-y-3">
       <input type="hidden" name="type" value={type} />
 
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
@@ -68,10 +68,10 @@ export default function StockEntryForm({
         ))}
       </div>
 
-      <div className="card space-y-4 p-5">
+      <div className="card space-y-3 p-4">
         {state.message && <p className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-900">{state.message}</p>}
 
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-3 sm:grid-cols-2">
           <Field label="Product *" error={e.productId} className="sm:col-span-2">
             <select name="productId" value={productId} onChange={(ev) => setProductId(ev.target.value)} className="field">
               <option value="">Choose a product…</option>
@@ -124,7 +124,7 @@ export default function StockEntryForm({
 
           {type === "ADJUSTMENT" && (
             <Field label="Correction" error={e.direction} className="sm:col-span-2">
-              <div className="flex gap-4 pt-1 text-sm">
+              <div className="flex gap-3 pt-1 text-sm">
                 <label className="flex items-center gap-2">
                   <input type="radio" name="direction" value="IN" defaultChecked={v.direction !== "OUT"} className="accent-brand-600" /> Add (found more)
                 </label>
@@ -184,7 +184,7 @@ export default function StockEntryForm({
           </Field>
         </div>
 
-        <div className="flex flex-wrap items-center justify-end gap-2 border-t border-line pt-4">
+        <div className="flex flex-wrap items-center justify-end gap-2 border-t border-line pt-3">
           {isOut && <span className="mr-auto text-xs text-slate-500">You can&apos;t take out more than is in the warehouse.</span>}
           <SubmitButton name="next" value="another" variant="secondary" pendingText="Saving…">
             Save & add another

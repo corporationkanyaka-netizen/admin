@@ -42,7 +42,7 @@ export default function Composer({ enquiryId, email, defaultSubject, defaultBody
               key={t.key}
               type="button"
               onClick={() => setTab(t.key)}
-              className={`inline-flex shrink-0 cursor-pointer items-center gap-1.5 border-b-2 px-4 py-2.5 text-sm transition ${
+              className={`inline-flex h-10 shrink-0 cursor-pointer items-center gap-1.5 border-b-2 px-3 text-[13px] transition ${
                 tab === t.key ? "border-brand-600 bg-white font-medium text-ink-950" : "border-transparent text-slate-600 hover:text-ink-900"
               }`}
             >
@@ -54,14 +54,14 @@ export default function Composer({ enquiryId, email, defaultSubject, defaultBody
 
       {tab === "EMAIL" ? (
         email ? (
-          <form ref={formRef} action={reply} className="space-y-3 p-4">
+          <form ref={formRef} action={reply} className="space-y-2 p-3">
             <input type="hidden" name="id" value={enquiryId} />
             <div className="text-xs text-slate-500">
               To <span className="font-medium text-ink-900">{email}</span> · their reply comes back here automatically
             </div>
             <input name="subject" defaultValue={replyState.values?.subject ?? defaultSubject} className="field" aria-label="Subject" />
             {replyState.errors?.subject && <p className="text-xs text-rose-600">{replyState.errors.subject}</p>}
-            <textarea name="body" rows={7} defaultValue={replyState.values?.body ?? defaultBody} className="field leading-relaxed" aria-label="Message" />
+            <textarea name="body" rows={5} defaultValue={replyState.values?.body ?? defaultBody} className="field leading-relaxed" aria-label="Message" />
             {replyState.errors?.body && <p className="text-xs text-rose-600">{replyState.errors.body}</p>}
             <Footer state={replyState}>
               <SubmitButton pendingText="Sending…">
@@ -70,10 +70,10 @@ export default function Composer({ enquiryId, email, defaultSubject, defaultBody
             </Footer>
           </form>
         ) : (
-          <p className="p-4 text-sm text-slate-600">No email address for this customer. Add one on the customer card, or call / WhatsApp them and log it here.</p>
+          <p className="p-3 text-[13px] text-slate-600">No email address for this customer. Add one on the customer card, or call / WhatsApp them and log it here.</p>
         )
       ) : (
-        <form ref={formRef} action={note} className="space-y-3 p-4" key={tab}>
+        <form ref={formRef} action={note} className="space-y-2 p-3" key={tab}>
           <input type="hidden" name="id" value={enquiryId} />
           <input type="hidden" name="type" value={tab} />
           <textarea name="note" rows={3} placeholder={placeholder} defaultValue={noteState.ok ? "" : noteState.values?.note} className="field" />

@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { MessageCircle, Phone, Plus } from "lucide-react";
 import { prisma } from "@/server/db";
 import { requireUser } from "@/server/auth";
-import { ButtonLink, Card, Empty, EnquiryBadge, PageHeader, QuoteBadge, Stat } from "@/components/ui";
+import { Avatar, ButtonLink, Card, Empty, EnquiryBadge, QuoteBadge, RecordHeader, Stat } from "@/components/ui";
 import { date, dateTime, inr, kgLabel, phone } from "@/lib/format";
 import { MOVEMENT } from "@/lib/labels";
 import { isUuid } from "@/lib/ids";
@@ -34,16 +34,17 @@ export default async function CustomerPage({ params }: { params: Promise<{ id: s
 
   return (
     <>
-      <PageHeader
+      <RecordHeader
         back={{ href: "/customers", label: "Customers" }}
+        avatar={<Avatar name={c.companyName} size={40} />}
         title={c.companyName}
-        subtitle={`${c.name} · ${phone(c.phone)}${c.email ? ` · ${c.email}` : ""} · customer since ${date(c.createdAt)}`}
+        meta={[c.name, <span key="p" className="font-mono">{phone(c.phone)}</span>, c.email ?? "No email", `Customer since ${date(c.createdAt)}`]}
         actions={
           <>
-            <a href={`tel:${c.phone}`} className="inline-flex items-center gap-1.5 rounded-md bg-white px-3.5 py-2 text-sm font-medium ring-1 ring-line hover:bg-paper-2">
+            <a href={`tel:${c.phone}`} className="inline-flex h-8 items-center gap-1.5 rounded-md bg-white px-3 text-[13px] font-medium ring-1 ring-[#cfd6df] hover:bg-paper">
               <Phone className="h-4 w-4 text-brand-600" /> Call
             </a>
-            <a href={`https://wa.me/${digits}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-md bg-white px-3.5 py-2 text-sm font-medium ring-1 ring-line hover:bg-paper-2">
+            <a href={`https://wa.me/${digits}`} target="_blank" rel="noreferrer" className="inline-flex h-8 items-center gap-1.5 rounded-md bg-white px-3 text-[13px] font-medium ring-1 ring-[#cfd6df] hover:bg-paper">
               <MessageCircle className="h-4 w-4 text-emerald-600" /> WhatsApp
             </a>
             <ButtonLink href={`/enquiries/new?${new URLSearchParams({ name: c.name, company: c.companyName, phone: c.phone, ...(c.email ? { email: c.email } : {}) })}`}>
@@ -53,15 +54,15 @@ export default async function CustomerPage({ params }: { params: Promise<{ id: s
         }
       />
 
-      <div className="mb-5 grid grid-cols-2 gap-3 md:grid-cols-4">
+      <div className="mb-3 grid grid-cols-2 gap-2 md:grid-cols-4">
         <Stat label="Enquiries" value={c.enquiries.length} />
         <Stat label="Quotations" value={quotes.length} />
         <Stat label="Total quoted" value={inr(quoted, 0)} />
         <Stat label="Business won" value={inr(won, 0)} tone={won ? "good" : "default"} />
       </div>
 
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
-        <div className="space-y-5">
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1fr)_300px]">
+        <div className="space-y-3">
           <Card title="Enquiries" pad={false}>
             {c.enquiries.length === 0 ? (
               <Empty title="No enquiries" />
@@ -69,7 +70,7 @@ export default async function CustomerPage({ params }: { params: Promise<{ id: s
               <ul className="divide-y divide-line/70">
                 {c.enquiries.map((e) => (
                   <li key={e.id}>
-                    <Link href={`/enquiries/${e.id}`} className="flex items-center justify-between gap-3 px-4 py-3 text-sm hover:bg-paper/60">
+                    <Link href={`/enquiries/${e.id}`} className="flex items-center justify-between gap-3 px-3 py-2 text-sm hover:bg-paper/60">
                       <div className="min-w-0">
                         <div className="truncate font-medium text-ink-900">
                           {e.items[0]?.productName} · <span className="font-normal text-slate-600">{e.items[0]?.quantityText}</span>
@@ -100,7 +101,7 @@ export default async function CustomerPage({ params }: { params: Promise<{ id: s
             ) : (
               <ul className="divide-y divide-line/70 text-sm">
                 {c.stockMoves.map((m) => (
-                  <li key={m.id} className="flex items-center justify-between gap-3 px-4 py-2.5">
+                  <li key={m.id} className="flex items-center justify-between gap-3 px-3 py-2">
                     <div className="min-w-0">
                       <div className="truncate text-ink-900">{m.product.name}</div>
                       <div className="text-xs text-slate-500">
@@ -124,7 +125,7 @@ export default async function CustomerPage({ params }: { params: Promise<{ id: s
             ) : (
               <ul className="divide-y divide-line/70 text-sm">
                 {c.emails.map((m) => (
-                  <li key={m.id} className="px-4 py-2.5">
+                  <li key={m.id} className="px-3 py-2">
                     <div className="flex justify-between gap-3">
                       <span className="truncate font-medium text-ink-900">{m.subject}</span>
                       <span className="shrink-0 text-xs text-slate-500">{dateTime(m.createdAt)}</span>
