@@ -6,11 +6,19 @@ import LoginForm from "./LoginForm";
 
 export const metadata: Metadata = { title: "Sign in" };
 
-export default async function LoginPage({ searchParams }: { searchParams: Promise<{ expired?: string }> }) {
-  if (await getCurrentUser()) redirect("/");
-  const { expired } = await searchParams;
+const NOTICES = {
+  expired: { tone: "warn", text: "Your code expired or had too many wrong tries. Please sign in again." },
+  password: { tone: "info", text: "Password saved. Sign in with your new password." },
+} as const;
 
-  return <AuthShell>
-      <LoginForm expired={expired === "1"} />
-    </AuthShell>;
+export default async function LoginPage({ searchParams }: { searchParams: Promise<{ expired?: string; password?: string }> }) {
+  if (await getCurrentUser()) redirect("/");
+  const sp = await searchParams;
+  const notice = sp.password ? NOTICES.password : sp.expired ? NOTICES.expired : undefined;
+
+  return (
+    <AuthShell>
+      <LoginForm notice={notice} />
+    </AuthShell>
+  );
 }

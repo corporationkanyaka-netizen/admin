@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { requireAdmin } from "@/server/auth";
+import { requireAdmin, sendSetPasswordLink } from "@/server/auth";
 import { prisma } from "@/server/db";
 import { Prisma } from "@/generated/prisma/client";
 import { fieldErrors, productSchema, userSchema } from "@/lib/validation";
@@ -53,5 +53,20 @@ export async function saveUserAction(_prev: FormState, fd: FormData): Promise<Fo
   // Switching someone off signs them out everywhere.
   if (id && !parsed.data.active) await prisma.staffSession.deleteMany({ where: { userId: id } });
   revalidatePath("/settings/users");
-  return { ok: true, message: id ? "Saved" : `Added ${parsed.data.email} — they can sign in now.` };
+  if (id) return { ok: true, message: "Saved" };
+  // New users get an email to create their password.
+  const invite = await sendSetPasswordLink(parsed.data.email, { invitedBy: admin.name });
+  return invite.ok
+    ? { ok: true, message: `Added. ${parsed.data.email} has been emailed a link to set their password.` }
+    : { ok: true, message: `Added, but the invite email failed: ${invite.error} Use “Send password link”.` };
+}
+
+/** Emails a user a link to set (or reset) their password. */
+export async function sendPasswordLinkAction(_prev: FormState, fd: FormData): Promise<FormState> {
+  const admin = await requireAdmin();
+  const id = z.uuid().parse(fd.get("id"));
+  const user = await prisma.user.findUniqueOrThrow({ where: { id } });
+  if (!user.active) return { message: "Switch this user on first." };
+  const result = await sendSetPasswordLink(user.email, { invitedBy: admin.name });
+  return result.ok ? { ok: true, message: `Link emailed to ${user.email}` } : { message: result.error };
 }

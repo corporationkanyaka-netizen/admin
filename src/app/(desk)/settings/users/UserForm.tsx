@@ -3,13 +3,14 @@
 import { useActionState } from "react";
 import SubmitButton from "@/components/SubmitButton";
 import { initialFormState } from "@/lib/form-state";
-import { saveUserAction } from "../actions";
+import { saveUserAction, sendPasswordLinkAction } from "../actions";
 
-type User = { id: string; name: string; email: string; role: "ADMIN" | "STAFF"; active: boolean; notifyEnquiries: boolean; notifyChats: boolean; lastLoginAt: string | null };
+type User = { id: string; name: string; email: string; role: "ADMIN" | "STAFF"; active: boolean; notifyEnquiries: boolean; notifyChats: boolean; lastLoginAt: string | null; hasPassword: boolean };
 
 /** One row per user (edit), or an empty row to add a new user. */
 export default function UserForm({ user, isSelf = false }: { user?: User; isSelf?: boolean }) {
   const [state, action] = useActionState(saveUserAction, initialFormState);
+  const [linkState, sendLink] = useActionState(sendPasswordLinkAction, initialFormState);
   const e = state.errors ?? {};
   const v = state.values ?? {};
 
@@ -19,7 +20,12 @@ export default function UserForm({ user, isSelf = false }: { user?: User; isSelf
       <div>
         <input name="name" defaultValue={v.name ?? user?.name} placeholder="Name" className="field" aria-label="Name" />
         {e.name && <p className="mt-1 text-xs text-rose-600">{e.name}</p>}
-        {user && <p className="mt-1 text-[11px] text-slate-400">{user.lastLoginAt ? `Last sign-in ${user.lastLoginAt}` : "Never signed in"}</p>}
+        {user && (
+          <p className="mt-1 text-[11px] text-slate-400">
+            {user.hasPassword ? "Password set" : <span className="text-amber-700">No password yet</span>} ·{" "}
+            {user.lastLoginAt ? `last sign-in ${user.lastLoginAt}` : "never signed in"}
+          </p>
+        )}
       </div>
       <div>
         <input name="email" type="email" defaultValue={v.email ?? user?.email} placeholder="email@example.com" className="field" aria-label="Email" />
@@ -47,7 +53,13 @@ export default function UserForm({ user, isSelf = false }: { user?: User; isSelf
         <SubmitButton variant={user ? "secondary" : "primary"} size="sm" pendingText="Saving…">
           {user ? "Save" : "Add user"}
         </SubmitButton>
+        {user && (
+          <button type="submit" formAction={sendLink} className="cursor-pointer text-[11px] font-medium text-brand-700 hover:underline">
+            {user.hasPassword ? "Send password reset link" : "Send password link"}
+          </button>
+        )}
         {state.message && <span className={`max-w-56 text-right text-xs ${state.ok ? "text-emerald-700" : "text-rose-600"}`}>{state.message}</span>}
+        {linkState.message && <span className={`max-w-56 text-right text-xs ${linkState.ok ? "text-emerald-700" : "text-rose-600"}`}>{linkState.message}</span>}
       </div>
     </form>
   );

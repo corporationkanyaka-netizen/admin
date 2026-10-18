@@ -15,9 +15,15 @@ It is a separate website on the **same PostgreSQL database** as the public site 
 | **Stock** | Stock on hand per warehouse (Pashamylaram, Kanukunta) in bags / MT. Stock in, Stock out, Transfer, Return, Adjustment, Opening stock. Can't dispatch more than is in the warehouse. Low-stock email to admins. Excel (CSV) export for the accountant / Tally |
 | **Settings** (admins) | Products: bag weight, GST, HSN, reorder level. Users: add staff, Admin / Staff role, which alert emails they get, switch off |
 
-## Sign-in
+## Sign-in (password + emailed code)
 
-No passwords. Staff enter their email and receive a single-use link (valid 15 minutes). Only active users in the `users` table can sign in — the same table that decides who gets the website's alert emails. Admins add people under **Settings → Users**.
+1. **Email + password.** 5 wrong passwords in a row lock the account for 15 minutes.
+2. **A 6-digit code** is emailed to the user (valid 10 minutes, 5 tries, only works in the same browser).
+
+Only active users in the `users` table can sign in — the same table that decides who gets the website's alert emails.
+**Passwords:** new users are emailed a "set your password" link when an admin adds them (Settings → Users). Anyone can use
+**Set or forgot password?** on the sign-in page, and admins can resend the link from the Users page. Links work once and expire in 60 minutes;
+setting a password signs that user out on every other device. Passwords are stored as scrypt hashes; codes and links as SHA-256 hashes.
 
 ## How it fits with the website
 

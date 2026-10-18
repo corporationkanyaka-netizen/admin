@@ -274,20 +274,27 @@ enum UserRole {
 
 /// Kanyaka staff. Active users receive the email alerts they are subscribed to.
 model User {
-  id              String         @id @default(uuid(7)) @db.Uuid
-  email           String         @unique @db.VarChar(254)
-  name            String         @db.VarChar(100)
-  role            UserRole       @default(STAFF)
+  id              String           @id @default(uuid(7)) @db.Uuid
+  email           String           @unique @db.VarChar(254)
+  name            String           @db.VarChar(100)
+  role            UserRole         @default(STAFF)
   /// Switch a user off without deleting them
-  active          Boolean        @default(true)
+  active          Boolean          @default(true)
   /// Email me every new quote request / enquiry
-  notifyEnquiries Boolean        @default(true) @map("notify_enquiries")
+  notifyEnquiries Boolean          @default(true) @map("notify_enquiries")
   /// Email me every new WhatsApp chat message from the website
-  notifyChats     Boolean        @default(true) @map("notify_chats")
-  createdAt       DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
-  lastLoginAt     DateTime?      @map("last_login_at") @db.Timestamptz(3)
-  updatedAt       DateTime       @updatedAt @map("updated_at") @db.Timestamptz(3)
+  notifyChats     Boolean          @default(true) @map("notify_chats")
+  createdAt       DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
+  lastLoginAt     DateTime?        @map("last_login_at") @db.Timestamptz(3)
+  /// scrypt hash ("scrypt$N$r$p$salt$hash"); null until the user sets a password
+  passwordHash    String?          @map("password_hash") @db.VarChar(255)
+  passwordSetAt   DateTime?        @map("password_set_at") @db.Timestamptz(3)
+  /// Wrong passwords in a row; 5 locks the account for 15 minutes
+  failedLogins    Int              @default(0) @map("failed_logins")
+  lockedUntil     DateTime?        @map("locked_until") @db.Timestamptz(3)
+  updatedAt       DateTime         @updatedAt @map("updated_at") @db.Timestamptz(3)
   loginTokens     LoginToken[]
+  loginChallenges LoginChallenge[]
   sessions        StaffSession[]
 
   @@map("users")
@@ -297,7 +304,7 @@ model User {
 // The Desk is a separate website on this same database. This repo owns all migrations;
 // the Desk keeps a copy of this schema for `prisma generate` only.
 
-/// Single-use sign-in link emailed to a staff user. Only the SHA-256 of the token is stored.
+/// Single-use "set your password" link emailed to a staff user. Only the SHA-256 of the token is stored.
 model LoginToken {
   id        String    @id @default(uuid(7)) @db.Uuid
   userId    String    @map("user_id") @db.Uuid
@@ -309,6 +316,23 @@ model LoginToken {
 
   @@index([userId, createdAt])
   @@map("login_tokens")
+}
+
+/// Step 2 of sign-in: after a correct password, a 6-digit code is emailed. The browser holds a random
+/// challenge token in a cookie; only SHA-256 hashes of the token and the code are stored.
+model LoginChallenge {
+  id        String    @id @default(uuid(7)) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique @map("token_hash") @db.Char(64)
+  codeHash  String    @map("code_hash") @db.Char(64)
+  attempts  Int       @default(0)
+  expiresAt DateTime  @map("expires_at") @db.Timestamptz(3)
+  usedAt    DateTime? @map("used_at") @db.Timestamptz(3)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@index([userId, createdAt])
+  @@map("login_challenges")
 }
 
 /// A signed-in Desk browser. The cookie holds a random token; only its SHA-256 is stored.
