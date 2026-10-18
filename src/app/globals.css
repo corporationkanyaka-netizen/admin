@@ -1,0 +1,117 @@
+@import "tailwindcss";
+
+/* Kanyaka Desk — same brand tokens as the website (ink navy, lab paper, brand cyan). */
+
+@theme {
+  --radius-md: 6px;
+
+  --font-sans: var(--font-inter), system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: var(--font-display-face), var(--font-inter), system-ui, sans-serif;
+  --font-mono: var(--font-mono-face), ui-monospace, "SFMono-Regular", Menlo, monospace;
+
+  --color-ink-950: #040b16;
+  --color-ink-900: #071324;
+  --color-ink-800: #0c1d35;
+  --color-ink-700: #13294a;
+  --color-ink-600: #1d3a63;
+
+  --color-paper: #f5f4ef;
+  --color-paper-2: #ecebe4;
+  --color-line: #dedcd3;
+
+  --color-brand-50: #f0f9ff;
+  --color-brand-100: #e0f2fe;
+  --color-brand-300: #7dd8f6;
+  --color-brand-400: #38bdf8;
+  --color-brand-500: #0ea5e9;
+  --color-brand-600: #0284c7;
+  --color-brand-700: #0369a1;
+
+  --color-signal: #dc2626;
+}
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    background-color: var(--color-paper);
+    color: #0b1626;
+    font-family: var(--font-sans);
+    font-feature-settings: "cv11", "ss01";
+  }
+
+  h1, h2, h3, h4 {
+    font-family: var(--font-display);
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+  }
+
+  ::selection {
+    background: #0ea5e9;
+    color: #fff;
+  }
+
+  :focus-visible {
+    outline: 2px solid #0ea5e9;
+    outline-offset: 2px;
+    border-radius: var(--radius-md);
+  }
+
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button {
+    opacity: 0.4;
+  }
+}
+
+@layer components {
+  /* Form controls — one look everywhere */
+  .field {
+    @apply block w-full rounded-md border border-line bg-white px-3 py-2 text-sm text-ink-900 shadow-[0_1px_0_rgba(11,22,38,0.03)] outline-none transition placeholder:text-slate-400 focus:border-brand-500 focus:ring-3 focus:ring-brand-500/15 disabled:bg-paper-2 disabled:text-slate-500;
+  }
+  .label {
+    @apply mb-1.5 block text-xs font-medium text-slate-600;
+  }
+  .card {
+    @apply rounded-md border border-line bg-white;
+  }
+  .num {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* Slim scrollbars, like the website */
+.scroll-thin {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(11, 22, 38, 0.18) transparent;
+}
+.scroll-thin-dark {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+}
+
+/* Printing a quotation: only the document, on A4 */
+@page {
+  size: A4;
+  margin: 14mm 12mm;
+}
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: #fff !important;
+  }
+  .print-sheet {
+    box-shadow: none !important;
+    border: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    max-width: none !important;
+  }
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
