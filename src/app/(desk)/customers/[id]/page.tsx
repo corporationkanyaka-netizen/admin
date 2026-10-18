@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
-import { MessageCircle, Phone, Plus } from "lucide-react";
+import { FileText, Inbox, IndianRupee, Mail, MessageCircle, Phone, Plus, Trophy, Truck } from "lucide-react";
 import { prisma } from "@/server/db";
 import { requireUser } from "@/server/auth";
-import { Avatar, ButtonLink, Card, Empty, EnquiryBadge, QuoteBadge, RecordHeader, Stat } from "@/components/ui";
+import { Avatar, ButtonAnchor, ButtonLink, Card, DescriptionList, Empty, EnquiryBadge, List, ListRow, QuoteBadge, RecordHeader, SplitLayout, Stat, StatGrid } from "@/components/ui";
 import { date, dateTime, inr, kgLabel, phone } from "@/lib/format";
 import { MOVEMENT } from "@/lib/labels";
 import { isUuid } from "@/lib/ids";
-import CustomerForm from "./CustomerForm";
+import { newEnquiryHref } from "../links";
+import CustomerActions from "./CustomerActions";
 
 export const metadata: Metadata = { title: "Customer" };
 
@@ -32,6 +32,8 @@ export default async function CustomerPage({ params }: { params: Promise<{ id: s
   const quoted = quotes.filter((q) => q.status !== "DRAFT" && q.status !== "CANCELLED").reduce((a, q) => a + Number(q.total), 0);
   const digits = c.phone.replace(/\D/g, "");
 
+  const details = { id: c.id, name: c.name, companyName: c.companyName, email: c.email, gstin: c.gstin, notes: c.notes };
+
   return (
     <>
       <RecordHeader
@@ -41,107 +43,120 @@ export default async function CustomerPage({ params }: { params: Promise<{ id: s
         meta={[c.name, <span key="p" className="font-mono">{phone(c.phone)}</span>, c.email ?? "No email", `Customer since ${date(c.createdAt)}`]}
         actions={
           <>
-            <a href={`tel:${c.phone}`} className="inline-flex h-8 items-center gap-1.5 rounded-md bg-white px-3 text-[13px] font-medium ring-1 ring-[#cfd6df] hover:bg-paper">
+            <ButtonAnchor href={`tel:${c.phone}`} variant="secondary">
               <Phone className="h-4 w-4 text-brand-600" /> Call
-            </a>
-            <a href={`https://wa.me/${digits}`} target="_blank" rel="noreferrer" className="inline-flex h-8 items-center gap-1.5 rounded-md bg-white px-3 text-[13px] font-medium ring-1 ring-[#cfd6df] hover:bg-paper">
+            </ButtonAnchor>
+            <ButtonAnchor href={`https://wa.me/${digits}`} variant="secondary">
               <MessageCircle className="h-4 w-4 text-emerald-600" /> WhatsApp
-            </a>
-            <ButtonLink href={`/enquiries/new?${new URLSearchParams({ name: c.name, company: c.companyName, phone: c.phone, ...(c.email ? { email: c.email } : {}) })}`}>
+            </ButtonAnchor>
+            <CustomerActions customer={details} enquiries={c.enquiries.length} />
+            <ButtonLink href={newEnquiryHref(c)}>
               <Plus className="h-4 w-4" /> New enquiry
             </ButtonLink>
           </>
         }
       />
 
-      <div className="mb-3 grid grid-cols-2 gap-2 md:grid-cols-4">
-        <Stat label="Enquiries" value={c.enquiries.length} />
-        <Stat label="Quotations" value={quotes.length} />
-        <Stat label="Total quoted" value={inr(quoted, 0)} />
-        <Stat label="Business won" value={inr(won, 0)} tone={won ? "good" : "default"} />
-      </div>
+      <StatGrid>
+        <Stat icon={<Inbox className="h-4 w-4" />} label="Enquiries" value={c.enquiries.length} />
+        <Stat icon={<FileText className="h-4 w-4" />} label="Quotations" value={quotes.length} />
+        <Stat icon={<IndianRupee className="h-4 w-4" />} label="Total quoted" value={inr(quoted, 0)} />
+        <Stat icon={<Trophy className="h-4 w-4" />} label="Business won" value={inr(won, 0)} tone={won ? "good" : "default"} />
+      </StatGrid>
 
-      <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1fr)_300px]">
-        <div className="space-y-3">
-          <Card title="Enquiries" pad={false}>
-            {c.enquiries.length === 0 ? (
-              <Empty title="No enquiries" />
-            ) : (
-              <ul className="divide-y divide-line/70">
-                {c.enquiries.map((e) => (
-                  <li key={e.id}>
-                    <Link href={`/enquiries/${e.id}`} className="flex items-center justify-between gap-3 px-3 py-2 text-sm hover:bg-paper/60">
-                      <div className="min-w-0">
-                        <div className="truncate font-medium text-ink-900">
-                          {e.items[0]?.productName} · <span className="font-normal text-slate-600">{e.items[0]?.quantityText}</span>
-                        </div>
-                        <div className="text-xs text-slate-500">
-                          <span className="font-mono">{e.reference}</span> · {date(e.createdAt)} · {e.deliveryLocation}
-                        </div>
-                      </div>
-                      <div className="flex shrink-0 flex-col items-end gap-1">
-                        <EnquiryBadge status={e.status} />
-                        {e.quotes[0] && (
-                          <span className="inline-flex items-center gap-1.5 text-xs">
-                            <span className="num text-slate-700">{inr(e.quotes[0].total, 0)}</span>
-                            <QuoteBadge status={e.quotes[0].status} />
-                          </span>
-                        )}
-                      </div>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            )}
+      <SplitLayout
+        asideWidth="sm"
+        aside={
+          <Card title="Details">
+            <DescriptionList
+              items={[
+                { label: "Company", value: c.companyName },
+                { label: "Contact person", value: c.name },
+                { label: "Phone", value: <span className="font-mono">{phone(c.phone)}</span> },
+                { label: "Email", value: c.email && <a href={`mailto:${c.email}`} className="text-brand-700 hover:underline">{c.email}</a> },
+                { label: "GSTIN", value: c.gstin && <span className="font-mono">{c.gstin}</span> },
+                { label: "Notes for the team", value: c.notes && <span className="whitespace-pre-wrap">{c.notes}</span> },
+              ]}
+            />
           </Card>
-
-          <Card title="Dispatches & returns" pad={false}>
-            {c.stockMoves.length === 0 ? (
-              <Empty title="No stock movements linked">When you record a Stock out for this customer, it appears here.</Empty>
-            ) : (
-              <ul className="divide-y divide-line/70 text-sm">
-                {c.stockMoves.map((m) => (
-                  <li key={m.id} className="flex items-center justify-between gap-3 px-3 py-2">
-                    <div className="min-w-0">
-                      <div className="truncate text-ink-900">{m.product.name}</div>
-                      <div className="text-xs text-slate-500">
-                        {date(m.occurredOn)} · {m.warehouse.name}
-                        {m.reference && ` · ${m.reference}`}
-                      </div>
+        }
+      >
+        <Card title="Enquiries" icon={<Inbox className="h-4 w-4" />} pad={false}>
+          {c.enquiries.length === 0 ? (
+            <Empty title="No enquiries" />
+          ) : (
+            <List>
+              {c.enquiries.map((e) => (
+                <ListRow
+                  key={e.id}
+                  href={`/enquiries/${e.id}`}
+                  title={
+                    <>
+                      {e.items[0]?.productName} · <span className="font-normal text-slate-600">{e.items[0]?.quantityText}</span>
+                    </>
+                  }
+                  subtitle={
+                    <>
+                      <span className="font-mono">{e.reference}</span> · {date(e.createdAt)} · {e.deliveryLocation}
+                    </>
+                  }
+                  trailing={
+                    <div className="flex flex-col items-end gap-1">
+                      <EnquiryBadge status={e.status} />
+                      {e.quotes[0] && (
+                        <span className="inline-flex items-center gap-1.5 text-xs">
+                          <span className="num text-slate-700">{inr(e.quotes[0].total, 0)}</span>
+                          <QuoteBadge status={e.quotes[0].status} />
+                        </span>
+                      )}
                     </div>
-                    <div className="shrink-0 text-right">
-                      <div className="num font-medium">{kgLabel(Math.abs(Number(m.quantityKg)))}</div>
-                      <div className="text-[11px] text-slate-500">{MOVEMENT[m.type].short}</div>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </Card>
-
-          <Card title="Recent emails" pad={false}>
-            {c.emails.length === 0 ? (
-              <Empty title="No emails yet" />
-            ) : (
-              <ul className="divide-y divide-line/70 text-sm">
-                {c.emails.map((m) => (
-                  <li key={m.id} className="px-3 py-2">
-                    <div className="flex justify-between gap-3">
-                      <span className="truncate font-medium text-ink-900">{m.subject}</span>
-                      <span className="shrink-0 text-xs text-slate-500">{dateTime(m.createdAt)}</span>
-                    </div>
-                    <div className="text-xs text-slate-500">{m.direction === "OUTBOUND" ? `Sent by ${m.sentBy ?? "staff"}` : `Received from ${m.fromEmail}`}</div>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </Card>
-        </div>
-
-        <Card title="Details">
-          <CustomerForm customer={{ id: c.id, name: c.name, companyName: c.companyName, email: c.email, gstin: c.gstin, notes: c.notes }} />
+                  }
+                />
+              ))}
+            </List>
+          )}
         </Card>
-      </div>
+
+        <Card title="Dispatches & returns" icon={<Truck className="h-4 w-4" />} pad={false}>
+          {c.stockMoves.length === 0 ? (
+            <Empty title="No stock movements linked">When you record a Stock out for this customer, it appears here.</Empty>
+          ) : (
+            <List>
+              {c.stockMoves.map((m) => (
+                <ListRow
+                  key={m.id}
+                  href={`/stock/${m.productId}`}
+                  title={m.product.name}
+                  subtitle={`${date(m.occurredOn)} · ${m.warehouse.name}${m.reference ? ` · ${m.reference}` : ""}`}
+                  trailing={
+                    <>
+                      <div className="num text-[13px] font-medium">{kgLabel(Math.abs(Number(m.quantityKg)))}</div>
+                      <div className="text-[11px] text-slate-500">{MOVEMENT[m.type].short}</div>
+                    </>
+                  }
+                />
+              ))}
+            </List>
+          )}
+        </Card>
+
+        <Card title="Recent emails" icon={<Mail className="h-4 w-4" />} pad={false}>
+          {c.emails.length === 0 ? (
+            <Empty title="No emails yet" />
+          ) : (
+            <List>
+              {c.emails.map((m) => (
+                <ListRow
+                  key={m.id}
+                  title={m.subject}
+                  subtitle={m.direction === "OUTBOUND" ? `Sent by ${m.sentBy ?? "staff"}` : `Received from ${m.fromEmail}`}
+                  trailing={<span className="text-xs text-slate-500">{dateTime(m.createdAt)}</span>}
+                />
+              ))}
+            </List>
+          )}
+        </Card>
+      </SplitLayout>
     </>
   );
 }

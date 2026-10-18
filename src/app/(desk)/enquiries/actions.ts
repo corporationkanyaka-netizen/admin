@@ -8,7 +8,7 @@ import { ActionError, changeStatus, createStaffEnquiry, logActivity, sendReply }
 import { createQuote, sendQuote, setQuoteStatus } from "@/server/quotes";
 import { fieldErrors, newEnquirySchema, quoteSchema, replySchema } from "@/lib/validation";
 import { formValues, type FormState } from "@/lib/form-state";
-import { ENQUIRY_STATUSES } from "@/lib/labels";
+import { ENQUIRY_STATUS, ENQUIRY_STATUSES } from "@/lib/labels";
 
 const uuid = z.uuid();
 const str = (fd: FormData, k: string) => String(fd.get(k) ?? "");
@@ -21,17 +21,20 @@ export async function createEnquiryAction(_prev: FormState, fd: FormData): Promi
   redirect(`/enquiries/${enquiry.id}?done=created`);
 }
 
-export async function statusAction(fd: FormData) {
+/** Moves an enquiry along (Contacted, Won, Lost…) from the enquiry page or the list's row menu. */
+export async function setEnquiryStatusAction(enquiryId: string, status: string, note?: string): Promise<FormState> {
   const user = await requireUser();
-  const id = uuid.parse(str(fd, "id"));
-  const status = z.enum(ENQUIRY_STATUSES).parse(str(fd, "status"));
+  const id = uuid.parse(enquiryId);
+  const next = z.enum(ENQUIRY_STATUSES).parse(status);
   try {
-    await changeStatus(id, status, str(fd, "note").trim() || undefined, user.name);
+    await changeStatus(id, next, note?.trim().slice(0, 500) || undefined, user.name);
   } catch (err) {
-    if (err instanceof ActionError) redirect(`/enquiries/${id}?error=${encodeURIComponent(err.message)}`);
+    if (err instanceof ActionError) return { message: err.message };
     throw err;
   }
+  revalidatePath("/enquiries");
   revalidatePath(`/enquiries/${id}`);
+  return { ok: true, message: `Marked as ${ENQUIRY_STATUS[next].label.toLowerCase()}` };
 }
 
 export async function activityAction(_prev: FormState, fd: FormData): Promise<FormState> {

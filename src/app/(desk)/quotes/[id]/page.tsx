@@ -1,17 +1,17 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import { notFound } from "next/navigation";
-import { CheckCircle2, FileText, Mail, XCircle } from "lucide-react";
+import { CheckCircle2, FileText, Mail, User, XCircle } from "lucide-react";
 import { prisma } from "@/server/db";
 import { requireUser } from "@/server/auth";
 import { companyInfo } from "@/data/company";
-import { Card, Flash, QuoteBadge, RecordHeader } from "@/components/ui";
-import SubmitButton from "@/components/SubmitButton";
+import { Alert, ButtonLink, Card, IconBadge, QuoteBadge, RecordHeader, SubmitButton, Textarea } from "@/components/ui";
 import PrintButton from "@/components/PrintButton";
 import { date, dateTime, inr, phone, qty } from "@/lib/format";
 import { UNIT_LABEL } from "@/lib/labels";
 import { isUuid } from "@/lib/ids";
 import { quoteStatusAction, sendQuoteAction } from "../../enquiries/actions";
+import CancelDraftButton from "./CancelDraftButton";
 
 export const metadata: Metadata = { title: "Quotation" };
 
@@ -42,65 +42,65 @@ export default async function QuotePage({ params, searchParams }: { params: Prom
   return (
     <>
       <div className="no-print">
-        {done && DONE[done] && <Flash>{DONE[done]}</Flash>}
-        {error && <Flash tone="error">{error}</Flash>}
+        {done && DONE[done] && <Alert>{DONE[done]}</Alert>}
+        {error && <Alert tone="error">{error}</Alert>}
         <RecordHeader
           back={{ href: `/enquiries/${e.id}`, label: `${e.companyName} · ${e.reference}` }}
           avatar={
-            <span className="grid h-10 w-10 place-items-center rounded-md bg-indigo-50 text-indigo-700">
+            <IconBadge>
               <FileText className="h-5 w-5" />
-            </span>
+            </IconBadge>
           }
           title={<span className="font-mono">{q.quoteNumber}</span>}
           badges={<QuoteBadge status={q.status} />}
           meta={[e.companyName, `Created ${dateTime(q.createdAt)} by ${q.createdBy ?? "staff"}`, q.sentAt ? `Emailed ${dateTime(q.sentAt)}` : "Not sent yet", <span key="t" className="num font-semibold text-ink-900">{inr(q.total)}</span>]}
-          actions={<PrintButton title={`${q.quoteNumber} ${e.companyName}`} />}
+          actions={
+            <>
+              {q.status === "DRAFT" && <CancelDraftButton id={q.id} number={q.quoteNumber} />}
+              <ButtonLink href={`/customers/${e.customerId}`} variant="secondary">
+                <User className="h-4 w-4" /> Customer
+              </ButtonLink>
+              <PrintButton title={`${q.quoteNumber} ${e.companyName}`} />
+            </>
+          }
         />
 
-        <div className="mb-3 grid grid-cols-1 gap-3 md:grid-cols-2">
-          {(q.status === "DRAFT" || q.status === "SENT") && (
-            <Card title={q.status === "DRAFT" ? "Send to customer" : "Email again"}>
+        {(q.status === "DRAFT" || q.status === "SENT") && (
+          <div className="mb-3 grid grid-cols-1 gap-3 md:grid-cols-2">
+            <Card title={q.status === "DRAFT" ? "Send to customer" : "Email again"} icon={<Mail className="h-4 w-4" />}>
               {e.email ? (
                 <form action={sendQuoteAction} className="space-y-2">
                   <input type="hidden" name="id" value={q.id} />
-                  <textarea name="message" rows={2} className="field" placeholder="Message (optional)" defaultValue={q.status === "DRAFT" ? "Thank you for your enquiry. Please find our best price below." : ""} />
-                  <SubmitButton pendingText="Sending…">
-                    <Mail className="h-4 w-4" /> Email to {e.email}
-                  </SubmitButton>
+                  <Textarea name="message" rows={2} placeholder="Message (optional)" defaultValue={q.status === "DRAFT" ? "Thank you for your enquiry. Please find our best price below." : ""} />
+                  <div className="flex justify-end">
+                    <SubmitButton pendingText="Sending…">
+                      <Mail className="h-4 w-4" /> Email to {e.email}
+                    </SubmitButton>
+                  </div>
                 </form>
               ) : (
-                <p className="text-sm text-slate-600">No customer email. Print / save as PDF and share it on WhatsApp.</p>
+                <p className="text-[13px] text-slate-600">No customer email. Print / save as PDF and share it on WhatsApp.</p>
               )}
             </Card>
-          )}
-          {q.status === "SENT" && (
-            <Card title="Customer's decision">
-              <form action={quoteStatusAction} className="flex flex-wrap gap-2">
-                <input type="hidden" name="id" value={q.id} />
-                <SubmitButton name="status" value="ACCEPTED" variant="success">
-                  <CheckCircle2 className="h-4 w-4" /> Accepted
-                </SubmitButton>
-                <SubmitButton name="status" value="REJECTED" variant="danger">
-                  <XCircle className="h-4 w-4" /> Rejected
-                </SubmitButton>
-                <SubmitButton name="status" value="EXPIRED" variant="secondary">
-                  Expired
-                </SubmitButton>
-              </form>
-              <p className="mt-2 text-xs text-slate-500">Accepting marks the enquiry as Won. Record the dispatch under Stock → Stock out.</p>
-            </Card>
-          )}
-          {q.status === "DRAFT" && (
-            <Card title="Discard">
-              <form action={quoteStatusAction}>
-                <input type="hidden" name="id" value={q.id} />
-                <SubmitButton name="status" value="CANCELLED" variant="danger" confirm="Cancel this draft quotation?">
-                  Cancel draft
-                </SubmitButton>
-              </form>
-            </Card>
-          )}
-        </div>
+            {q.status === "SENT" && (
+              <Card title="Customer's decision" icon={<CheckCircle2 className="h-4 w-4" />}>
+                <form action={quoteStatusAction} className="flex flex-wrap gap-2">
+                  <input type="hidden" name="id" value={q.id} />
+                  <SubmitButton name="status" value="ACCEPTED" variant="success">
+                    <CheckCircle2 className="h-4 w-4" /> Accepted
+                  </SubmitButton>
+                  <SubmitButton name="status" value="REJECTED" variant="danger">
+                    <XCircle className="h-4 w-4" /> Rejected
+                  </SubmitButton>
+                  <SubmitButton name="status" value="EXPIRED" variant="secondary">
+                    Expired
+                  </SubmitButton>
+                </form>
+                <p className="mt-2 text-xs text-slate-500">Accepting marks the enquiry as Won. Record the dispatch under Stock → Stock out.</p>
+              </Card>
+            )}
+          </div>
+        )}
       </div>
 
       {/* The document — what prints */}

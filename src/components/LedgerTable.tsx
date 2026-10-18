@@ -1,6 +1,5 @@
-import { Table, td, th } from "./ui";
+import { MovementChip, Table, Td, Th } from "@/components/ui";
 import { date, kgLabel, stockLabel } from "@/lib/format";
-import { MOVEMENT, type MovementKey } from "@/lib/labels";
 
 export type LedgerRow = {
   id: string;
@@ -20,17 +19,17 @@ export type LedgerRow = {
 export default function LedgerTable({ rows, showProduct = true }: { rows: LedgerRow[]; showProduct?: boolean }) {
   const withBalance = rows.some((r) => r.balance !== undefined);
   return (
-    <Table>
+    <Table minWidth={760}>
       <thead>
         <tr>
-          <th className={th}>Date</th>
-          {showProduct && <th className={th}>Product</th>}
-          <th className={th}>Entry</th>
-          <th className={th}>Warehouse</th>
-          <th className={th}>Party / reference</th>
-          <th className={`${th} text-right`}>In</th>
-          <th className={`${th} text-right`}>Out</th>
-          {withBalance && <th className={`${th} text-right`}>Balance</th>}
+          <Th>Date</Th>
+          {showProduct && <Th>Product</Th>}
+          <Th>Entry</Th>
+          <Th>Warehouse</Th>
+          <Th>Party / reference</Th>
+          <Th align="right">In</Th>
+          <Th align="right">Out</Th>
+          {withBalance && <Th align="right">Balance</Th>}
         </tr>
       </thead>
       <tbody>
@@ -42,24 +41,31 @@ export default function LedgerTable({ rows, showProduct = true }: { rows: Ledger
               {Boolean(m.product.packKg) && <div className="text-[11px] text-slate-500">{kgLabel(v)}</div>}
             </>
           );
-          const mv = MOVEMENT[m.type as MovementKey];
           return (
             <tr key={m.id} className="hover:bg-paper/60">
-              <td className={`${td} whitespace-nowrap text-slate-700`}>{date(m.occurredOn)}</td>
-              {showProduct && <td className={`${td} font-medium text-ink-900`}>{m.product.name}</td>}
-              <td className={td}>
-                <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${mv?.tone ?? ""}`}>{mv?.short ?? m.type}</span>
+              <Td className="whitespace-nowrap text-slate-700">{date(m.occurredOn)}</Td>
+              {showProduct && <Td className="font-medium text-ink-900">{m.product.name}</Td>}
+              <Td>
+                <MovementChip type={m.type} />
                 {m.actor && <div className="mt-1 text-[11px] text-slate-400">by {m.actor}</div>}
-              </td>
-              <td className={`${td} text-slate-700`}>{m.warehouse.name.replace(/ warehouse$/i, "")}</td>
-              <td className={`${td} text-slate-700`}>
+              </Td>
+              <Td className="text-slate-700">{m.warehouse.name.replace(/ warehouse$/i, "")}</Td>
+              <Td className="text-slate-700">
                 {m.party ?? <span className="text-slate-400">—</span>}
                 {m.reference && <div className="font-mono text-[11px] text-slate-500">{m.reference}</div>}
                 {m.note && <div className="text-xs text-slate-500">{m.note}</div>}
-              </td>
-              <td className={`${td} num text-right text-emerald-700`}>{kg > 0 ? label(kg) : ""}</td>
-              <td className={`${td} num text-right text-rose-700`}>{kg < 0 ? label(-kg) : ""}</td>
-              {withBalance && <td className={`${td} num text-right font-medium text-ink-950`}>{m.balance !== undefined && label(m.balance)}</td>}
+              </Td>
+              <Td align="right" className="num text-emerald-700">
+                {kg > 0 ? label(kg) : ""}
+              </Td>
+              <Td align="right" className="num text-rose-700">
+                {kg < 0 ? label(-kg) : ""}
+              </Td>
+              {withBalance && (
+                <Td align="right" className="num font-medium text-ink-950">
+                  {m.balance !== undefined && label(m.balance)}
+                </Td>
+              )}
             </tr>
           );
         })}

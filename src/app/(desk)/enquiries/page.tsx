@@ -1,13 +1,29 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { Globe, Inbox, MessageCircle, Phone, Plus, Store, Mail } from "lucide-react";
+import { ArrowRight, Globe, Inbox, Mail, MessageCircle, Phone, Plus, Store } from "lucide-react";
 import { prisma } from "@/server/db";
 import { requireUser } from "@/server/auth";
-import { Avatar, ButtonLink, Empty, EnquiryBadge, FilterChip, PageHeader, Pagination, SearchField, Table, TableToolbar, td, th } from "@/components/ui";
+import {
+  Avatar,
+  ButtonLink,
+  DataTable,
+  Empty,
+  EnquiryBadge,
+  FilterChip,
+  IconLink,
+  List,
+  ListRow,
+  PageHeader,
+  Pagination,
+  SearchField,
+  TableCard,
+  TableToolbar,
+  type Column,
+} from "@/components/ui";
 import { SOURCE } from "@/lib/labels";
 import { ago, istDayStart, phone } from "@/lib/format";
 import type { Prisma } from "@/generated/prisma/client";
 import type { EnquiryStatus } from "@/generated/prisma/enums";
+import EnquiryRowActions from "./EnquiryRowActions";
 
 export const metadata: Metadata = { title: "Enquiries" };
 
@@ -67,6 +83,89 @@ export default async function EnquiriesPage({ searchParams }: { searchParams: Pr
     return `/enquiries?${params}`;
   };
   const yesterday = istDayStart(1);
+  type Row = (typeof rows)[number];
+  const late = (e: Row) => e.status === "NEW" && e.createdAt < yesterday;
+  const empty = (
+    <Empty icon={<Inbox className="h-5 w-5" />} title={q ? `Nothing matches “${q}”` : "No enquiries here"}>
+      {q ? "Try a company name, phone number or KC-ENQ reference." : "New enquiries from the website show up automatically."}
+    </Empty>
+  );
+
+  const columns: Column<Row>[] = [
+    {
+      key: "customer",
+      header: "Customer",
+      cell: (e) => (
+        <div className="flex items-center gap-2.5">
+          <Avatar name={e.companyName} size={30} />
+          <div className="min-w-0">
+            <div className="truncate font-medium text-ink-950 group-hover:text-brand-700">{e.companyName}</div>
+            <div className="truncate text-xs text-slate-500">
+              {e.contactName} · <span className="font-mono">{phone(e.phone)}</span>
+            </div>
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: "product",
+      header: "Product & quantity",
+      cell: (e) => (
+        <>
+          <div className="text-ink-900">{e.items[0]?.productName ?? "—"}</div>
+          <div className="text-xs text-slate-500">{e.items[0]?.quantityText}</div>
+        </>
+      ),
+    },
+    { key: "deliver", header: "Deliver to", className: "text-slate-600", cell: (e) => e.deliveryLocation },
+    {
+      key: "status",
+      header: "Status",
+      cell: (e) => (
+        <>
+          <EnquiryBadge status={e.status} />
+          {e._count.quotes > 0 && <span className="ml-1.5 text-[11px] text-slate-500">· {e._count.quotes} quote{e._count.quotes > 1 ? "s" : ""}</span>}
+        </>
+      ),
+    },
+    {
+      key: "ref",
+      header: "Reference",
+      cell: (e) => {
+        const Icon = SOURCE_ICON[e.source] ?? Inbox;
+        return (
+          <>
+            <div className="font-mono text-[11px] text-slate-600">{e.reference}</div>
+            <div className="inline-flex items-center gap-1 text-[11px] text-slate-400">
+              <Icon className="h-3 w-3" /> {SOURCE[e.source]}
+            </div>
+          </>
+        );
+      },
+    },
+    {
+      key: "received",
+      header: "Received",
+      align: "right",
+      className: "whitespace-nowrap text-xs",
+      cell: (e) => <span className={late(e) ? "font-medium text-rose-600" : "text-slate-500"}>{ago(e.createdAt)}</span>,
+    },
+    {
+      key: "actions",
+      header: <span className="sr-only">Actions</span>,
+      align: "right",
+      width: "w-24",
+      interactive: true,
+      cell: (e) => (
+        <div className="flex justify-end gap-0.5">
+          <IconLink href={`/enquiries/${e.id}`} label={`Open ${e.companyName}`}>
+            <ArrowRight className="h-4 w-4" />
+          </IconLink>
+          <EnquiryRowActions id={e.id} company={e.companyName} status={e.status} phone={e.phone} />
+        </div>
+      ),
+    },
+  ];
 
   return (
     <>
@@ -80,115 +179,55 @@ export default async function EnquiriesPage({ searchParams }: { searchParams: Pr
         }
       />
 
-      <div className="card overflow-hidden">
-        <TableToolbar>
-          <div className="scroll-thin -mx-1 flex flex-1 gap-1.5 overflow-x-auto px-1">
-            {TABS.map((t) => (
-              <FilterChip key={t.key} href={href({ status: t.key, page: 1 })} selected={t.key === tab.key} count={countOf(t.statuses)}>
-                {t.label}
-              </FilterChip>
-            ))}
-          </div>
-          <SearchField defaultValue={q} placeholder="Search company, phone, product, ref…" hidden={{ status: tab.key }} />
-        </TableToolbar>
-
+      <TableCard
+        toolbar={
+          <TableToolbar actions={<SearchField defaultValue={q} placeholder="Search company, phone, product, ref…" hidden={{ status: tab.key }} />}>
+            <div className="scroll-thin -mx-1 flex min-w-0 flex-1 gap-1.5 overflow-x-auto px-1">
+              {TABS.map((t) => (
+                <FilterChip key={t.key} href={href({ status: t.key, page: 1 })} selected={t.key === tab.key} count={countOf(t.statuses)}>
+                  {t.label}
+                </FilterChip>
+              ))}
+            </div>
+          </TableToolbar>
+        }
+        footer={total > 0 && <Pagination page={page} pageSize={PAGE_SIZE} total={total} href={(p) => href({ page: p })} />}
+      >
         {/* Phones: compact list */}
-        <ul className="divide-y divide-line/70 md:hidden">
-          {rows.length === 0 && (
-            <li>
-              <Empty icon={<Inbox className="h-5 w-5" />} title={q ? `Nothing matches “${q}”` : "No enquiries here"} />
-            </li>
+        <div className="md:hidden">
+          {rows.length === 0 ? (
+            empty
+          ) : (
+            <List>
+              {rows.map((e) => (
+                <ListRow
+                  key={e.id}
+                  href={`/enquiries/${e.id}`}
+                  leading={<Avatar name={e.companyName} size={32} />}
+                  title={e.companyName}
+                  subtitle={
+                    <>
+                      {e.items[0]?.productName} · {e.items[0]?.quantityText} → {e.deliveryLocation}
+                      <span className="ml-1.5 font-mono text-[10px] text-slate-400">{e.reference}</span>
+                    </>
+                  }
+                  trailing={
+                    <div className="flex flex-col items-end gap-1">
+                      <span className={`text-[11px] ${late(e) ? "font-medium text-rose-600" : "text-slate-500"}`}>{ago(e.createdAt)}</span>
+                      <EnquiryBadge status={e.status} />
+                    </div>
+                  }
+                />
+              ))}
+            </List>
           )}
-          {rows.map((e) => (
-            <li key={e.id}>
-              <Link href={`/enquiries/${e.id}`} className="flex gap-2.5 px-3 py-2.5 active:bg-paper">
-                <Avatar name={e.companyName} size={32} />
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="truncate font-medium text-ink-950">{e.companyName}</span>
-                    <span className={`shrink-0 text-[11px] ${e.status === "NEW" && e.createdAt < yesterday ? "font-medium text-rose-600" : "text-slate-500"}`}>{ago(e.createdAt)}</span>
-                  </div>
-                  <div className="truncate text-xs text-slate-600">
-                    {e.items[0]?.productName} · {e.items[0]?.quantityText} → {e.deliveryLocation}
-                  </div>
-                  <div className="mt-1 flex items-center gap-2">
-                    <EnquiryBadge status={e.status} />
-                    <span className="truncate font-mono text-[10px] text-slate-400">{e.reference}</span>
-                  </div>
-                </div>
-              </Link>
-            </li>
-          ))}
-        </ul>
+        </div>
 
         {/* Tablets and desktops: data table */}
         <div className="hidden md:block">
-          <Table>
-            {rows.length > 0 && (
-              <thead>
-                <tr>
-                  <th className={th}>Customer</th>
-                  <th className={th}>Product & quantity</th>
-                  <th className={th}>Deliver to</th>
-                  <th className={th}>Status</th>
-                  <th className={th}>Reference</th>
-                  <th className={`${th} text-right`}>Received</th>
-                </tr>
-              </thead>
-            )}
-            <tbody>
-              {rows.length === 0 ? (
-                <tr>
-                  <td colSpan={6}>
-                    <Empty icon={<Inbox className="h-5 w-5" />} title={q ? `Nothing matches “${q}”` : "No enquiries here"}>
-                      {q ? "Try a company name, phone number or KC-ENQ reference." : "New enquiries from the website show up automatically."}
-                    </Empty>
-                  </td>
-                </tr>
-              ) : (
-                rows.map((e) => {
-                  const Icon = SOURCE_ICON[e.source] ?? Inbox;
-                  const late = e.status === "NEW" && e.createdAt < yesterday;
-                  return (
-                    <tr key={e.id} className="group relative transition hover:bg-brand-50/50">
-                      <td className={td}>
-                        <div className="flex items-center gap-2.5">
-                          <Avatar name={e.companyName} size={30} />
-                          <div className="min-w-0">
-                            <Link href={`/enquiries/${e.id}`} className="block truncate font-medium text-ink-950 after:absolute after:inset-0 group-hover:text-brand-700">
-                              {e.companyName}
-                            </Link>
-                            <div className="truncate text-xs text-slate-500">
-                              {e.contactName} · <span className="font-mono">{phone(e.phone)}</span>
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className={td}>
-                        <div className="text-ink-900">{e.items[0]?.productName ?? "—"}</div>
-                        <div className="text-xs text-slate-500">{e.items[0]?.quantityText}</div>
-                      </td>
-                      <td className={`${td} text-slate-600`}>{e.deliveryLocation}</td>
-                      <td className={td}>
-                        <EnquiryBadge status={e.status} />
-                        {e._count.quotes > 0 && <span className="ml-1.5 text-[11px] text-slate-500">· {e._count.quotes} quote{e._count.quotes > 1 ? "s" : ""}</span>}
-                      </td>
-                      <td className={td}>
-                        <div className="font-mono text-[11px] text-slate-600">{e.reference}</div>
-                        <div className="inline-flex items-center gap-1 text-[11px] text-slate-400">
-                          <Icon className="h-3 w-3" /> {SOURCE[e.source]}
-                        </div>
-                      </td>
-                      <td className={`${td} whitespace-nowrap text-right text-xs ${late ? "font-medium text-rose-600" : "text-slate-500"}`}>{ago(e.createdAt)}</td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </Table>
+          <DataTable columns={columns} rows={rows} rowKey={(e) => e.id} rowHref={(e) => `/enquiries/${e.id}`} rowLabel={(e) => `Open ${e.companyName}`} minWidth={900} empty={empty} />
         </div>
-        {total > 0 && <Pagination page={page} pageSize={PAGE_SIZE} total={total} href={(p) => href({ page: p })} />}
-      </div>
+      </TableCard>
     </>
   );
 }

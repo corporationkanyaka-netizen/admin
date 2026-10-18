@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import AuthShell from "@/components/AuthShell";
+import { Alert, ButtonLink } from "@/components/ui";
 import { MIN_PASSWORD_LENGTH, setPasswordLinkValid } from "@/server/auth";
 import SetPasswordForm from "./SetPasswordForm";
 
@@ -17,11 +17,13 @@ export default async function SetPasswordPage({ searchParams }: { searchParams: 
       {valid ? (
         <SetPasswordForm token={token} minLength={MIN_PASSWORD_LENGTH} />
       ) : (
-        <div className="space-y-3 text-center text-sm text-slate-600">
-          <p>This link has expired or was already used.</p>
-          <Link href="/login/reset" className="font-medium text-brand-700 hover:underline">
+        <div className="space-y-4">
+          <Alert tone="warning" className="">
+            This link has expired or was already used.
+          </Alert>
+          <ButtonLink href="/login/reset" size="lg" className="w-full">
             Request a new link
-          </Link>
+          </ButtonLink>
         </div>
       )}
     </AuthShell>

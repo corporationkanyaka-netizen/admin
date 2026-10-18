@@ -1,8 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import Field from "@/components/Field";
-import SubmitButton from "@/components/SubmitButton";
+import { Checkbox, Field, FormActions, FormError, FormGrid, FormSection, Input, Select, SubmitButton, Textarea } from "@/components/ui";
 import { initialFormState } from "@/lib/form-state";
 import { SOURCE, STAFF_SOURCES } from "@/lib/labels";
 import { createEnquiryAction } from "../actions";
@@ -15,69 +14,66 @@ export default function NewEnquiryForm({ products, defaults }: { products: Produ
   const e = state.errors ?? {};
 
   return (
-    <form action={action} className="card space-y-3 p-4">
-      <div>
-        <h2 className="mb-3 text-sm font-semibold text-ink-900">Customer</h2>
-        <div className="grid gap-3 sm:grid-cols-2">
+    <form action={action} className="card space-y-4 p-4">
+      <FormSection title="Customer">
+        <FormGrid>
           <Field label="Contact person *" error={e.name}>
-            <input name="name" defaultValue={v.name} className="field" autoFocus />
+            <Input name="name" defaultValue={v.name} autoFocus />
           </Field>
           <Field label="Company *" error={e.company}>
-            <input name="company" defaultValue={v.company} className="field" />
+            <Input name="company" defaultValue={v.company} />
           </Field>
           <Field label="Phone / WhatsApp *" error={e.phone} hint="Existing customers are matched by phone.">
-            <input name="phone" defaultValue={v.phone} inputMode="tel" placeholder="98490 12345" className="field font-mono" />
+            <Input name="phone" defaultValue={v.phone} inputMode="tel" placeholder="98490 12345" className="font-mono" />
           </Field>
           <Field label="Email" error={e.email} hint="Needed to email replies and quotations.">
-            <input name="email" type="email" defaultValue={v.email} className="field" />
+            <Input name="email" type="email" defaultValue={v.email} />
           </Field>
-        </div>
-      </div>
+        </FormGrid>
+      </FormSection>
 
-      <div className="border-t border-line pt-3">
-        <h2 className="mb-3 text-sm font-semibold text-ink-900">Requirement</h2>
-        <div className="grid gap-3 sm:grid-cols-2">
+      <FormSection title="Requirement">
+        <FormGrid>
           <Field label="Product" error={e.productSlug}>
-            <select name="productSlug" defaultValue={v.productSlug ?? ""} className="field">
+            <Select name="productSlug" defaultValue={v.productSlug ?? ""}>
               <option value="">Other / not in list</option>
               {products.map((p) => (
                 <option key={p.slug} value={p.slug}>
                   {p.name} ({p.packing})
                 </option>
               ))}
-            </select>
+            </Select>
           </Field>
           <Field label="If other, which chemical?" error={e.otherProduct}>
-            <input name="otherProduct" defaultValue={v.otherProduct} className="field" />
+            <Input name="otherProduct" defaultValue={v.otherProduct} />
           </Field>
           <Field label="Quantity *" error={e.quantity} hint="e.g. 10 MT, 200 bags, 1 tanker">
-            <input name="quantity" defaultValue={v.quantity} className="field" />
+            <Input name="quantity" defaultValue={v.quantity} />
           </Field>
           <Field label="Deliver to *" error={e.deliveryLocation}>
-            <input name="deliveryLocation" defaultValue={v.deliveryLocation} placeholder="City / industrial area" className="field" />
+            <Input name="deliveryLocation" defaultValue={v.deliveryLocation} placeholder="City / industrial area" />
           </Field>
           <Field label="How did it come in? *" error={e.source}>
-            <select name="source" defaultValue={v.source ?? "PHONE"} className="field">
+            <Select name="source" defaultValue={v.source ?? "PHONE"}>
               {STAFF_SOURCES.map((s) => (
                 <option key={s} value={s}>
                   {SOURCE[s]}
                 </option>
               ))}
-            </select>
+            </Select>
           </Field>
-          <label className="flex items-center gap-2 self-end pb-2 text-sm text-slate-700">
-            <input type="checkbox" name="wantsCoa" defaultChecked={v.wantsCoa === "on"} className="h-4 w-4 accent-brand-600" />
-            Customer wants the manufacturer&apos;s COA
-          </label>
+          <Checkbox name="wantsCoa" defaultChecked={v.wantsCoa === "on"} label="Customer wants the manufacturer's COA" className="self-end pb-2" />
           <Field label="Notes" error={e.message} className="sm:col-span-2">
-            <textarea name="message" rows={3} defaultValue={v.message} className="field" placeholder="Anything else they mentioned — grade, timeline, target price…" />
+            <Textarea name="message" rows={3} defaultValue={v.message} placeholder="Anything else they mentioned — grade, timeline, target price…" />
           </Field>
-        </div>
-      </div>
+        </FormGrid>
+      </FormSection>
 
-      <div className="flex justify-end gap-2 border-t border-line pt-3">
+      <FormError>{state.message}</FormError>
+
+      <FormActions>
         <SubmitButton pendingText="Saving…">Save enquiry</SubmitButton>
-      </div>
+      </FormActions>
     </form>
   );
 }

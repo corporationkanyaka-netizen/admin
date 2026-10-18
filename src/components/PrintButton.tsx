@@ -1,13 +1,12 @@
 "use client";
 
 import { Printer } from "lucide-react";
-import { buttonClass } from "./ui";
+import { Button } from "@/components/ui";
 
 export default function PrintButton({ label = "Print / Save PDF", title }: { label?: string; title?: string }) {
   return (
-    <button
-      type="button"
-      className={buttonClass("secondary")}
+    <Button
+      variant="secondary"
       onClick={() => {
         const previous = document.title;
         if (title) document.title = title; // becomes the PDF file name
@@ -16,6 +15,6 @@ export default function PrintButton({ label = "Print / Save PDF", title }: { lab
       }}
     >
       <Printer className="h-4 w-4" /> {label}
-    </button>
+    </Button>
   );
 }

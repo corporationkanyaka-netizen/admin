@@ -22,5 +22,17 @@ export async function updateCustomerAction(_prev: FormState, fd: FormData): Prom
     }
   });
   revalidatePath(`/customers/${id}`);
-  return { ok: true, message: "Saved" };
+  revalidatePath("/customers");
+  return { ok: true, message: `${companyName} saved` };
+}
+
+/** Deletes a customer with no enquiries (and so no quotations). Linked emails and stock entries keep their text, unlinked. */
+export async function deleteCustomerAction(id: string): Promise<FormState> {
+  await requireUser();
+  const cid = z.uuid().parse(id);
+  const enquiries = await prisma.enquiry.count({ where: { customerId: cid } });
+  if (enquiries > 0) return { message: `This customer has ${enquiries} ${enquiries === 1 ? "enquiry" : "enquiries"}, so it can't be deleted.` };
+  const c = await prisma.customer.delete({ where: { id: cid } });
+  revalidatePath("/customers");
+  return { ok: true, message: `${c.companyName} deleted` };
 }

@@ -2,7 +2,7 @@
 
 import { useFormStatus } from "react-dom";
 import { Loader2 } from "lucide-react";
-import { buttonClass, type ButtonVariant } from "./ui";
+import { buttonClass, type ButtonSize, type ButtonVariant } from "./button";
 
 /** A form submit button that disables itself and shows a spinner while the server action runs. */
 export default function SubmitButton({
@@ -18,7 +18,7 @@ export default function SubmitButton({
   children: React.ReactNode;
   pendingText?: string;
   variant?: ButtonVariant;
-  size?: "sm" | "md";
+  size?: ButtonSize;
   className?: string;
   name?: string;
   value?: string;
