@@ -293,8 +293,11 @@ export default function AppShell({ user, counts, signOut, children }: { user: Us
         )}
 
         {/* ── Content ─────────────────────────────────────────────── */}
-        <main className={`print-main pb-10 pt-12 transition-[padding] ${rail ? "lg:pl-[60px]" : "lg:pl-56"}`}>
-          <div className="px-3 py-3 sm:px-4 lg:px-6 lg:py-4">{children}</div>
+        <main className={`print-main pb-10 pt-12 transition-[padding] lg:pb-7 ${rail ? "lg:pl-[60px]" : "lg:pl-56"}`}>
+          {/* Desktop: the content area is exactly one screen tall; long pages scroll inside it, and data tables shrink to fit and scroll on their own. */}
+          <div className="scroll-thin px-3 py-3 sm:px-4 lg:flex lg:h-[calc(100dvh-4.75rem)] lg:flex-col lg:overflow-y-auto lg:px-6 lg:py-4 print:block print:h-auto print:overflow-visible">
+            {children}
+          </div>
         </main>
 
         {/* ── Footer status bar ───────────────────────────────────── */}

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
-import { Button, Card, ConfirmDialog, Input, useServerAction } from "@/components/ui";
+import { Button, Card, ConfirmDialog, Field, Input, useServerAction } from "@/components/ui";
 import { ENQUIRY_STATUS, ENQUIRY_STATUSES } from "@/lib/labels";
 import { setEnquiryStatusAction } from "../actions";
 
@@ -31,7 +31,9 @@ export default function StatusCard({ enquiryId, status }: { enquiryId: string; s
             </Button>
           ))}
         </div>
-        <Input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Reason (optional), e.g. price too high" aria-label="Reason" className="text-xs" />
+        <Field label="Reason (optional)" className="pt-2">
+          <Input value={note} onChange={(e) => setNote(e.target.value)} placeholder="e.g. price too high" />
+        </Field>
       </div>
       <ConfirmDialog open={spam} onClose={() => setSpam(false)} pending={pending} title="Mark this enquiry as spam?" confirmLabel="Mark as spam" onConfirm={() => set("SPAM", () => setSpam(false))}>
         It moves to the Spam tab of the enquiry list. You can change the status again here at any time.

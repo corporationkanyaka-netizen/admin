@@ -20,7 +20,7 @@ export default function LoginForm({ notice }: { notice?: { tone: "info" | "warn"
         </Alert>
       )}
       <Field label="Work email">
-        <Input name="email" type="email" aria-label="Work email" required autoComplete="username" autoFocus defaultValue={state.email} className="py-2.5" />
+        <Input name="email" type="email" required autoComplete="username" autoFocus defaultValue={state.email} className="py-2.5" />
       </Field>
       <Field label="Password" hint={<TextLink href="/login/reset" className="-ml-1.5">Set or forgot password?</TextLink>}>
         <PasswordInput name="password" required autoComplete="current-password" className="py-2.5" />

@@ -5,7 +5,7 @@ import { CheckCircle2, FileText, Mail, User, XCircle } from "lucide-react";
 import { prisma } from "@/server/db";
 import { requireUser } from "@/server/auth";
 import { companyInfo } from "@/data/company";
-import { Alert, ButtonLink, Card, IconBadge, QuoteBadge, RecordHeader, SubmitButton, Textarea } from "@/components/ui";
+import { Alert, ButtonLink, Card, Field, IconBadge, QuoteBadge, RecordHeader, SubmitButton, Textarea } from "@/components/ui";
 import PrintButton from "@/components/PrintButton";
 import { date, dateTime, inr, phone, qty } from "@/lib/format";
 import { UNIT_LABEL } from "@/lib/labels";
@@ -69,9 +69,11 @@ export default async function QuotePage({ params, searchParams }: { params: Prom
           <div className="mb-3 grid grid-cols-1 gap-3 md:grid-cols-2">
             <Card title={q.status === "DRAFT" ? "Send to customer" : "Email again"} icon={<Mail className="h-4 w-4" />}>
               {e.email ? (
-                <form action={sendQuoteAction} className="space-y-2">
+                <form action={sendQuoteAction} className="space-y-3 pt-1">
                   <input type="hidden" name="id" value={q.id} />
-                  <Textarea name="message" rows={2} placeholder="Message (optional)" defaultValue={q.status === "DRAFT" ? "Thank you for your enquiry. Please find our best price below." : ""} />
+                  <Field label="Message (optional)">
+                    <Textarea name="message" rows={2} defaultValue={q.status === "DRAFT" ? "Thank you for your enquiry. Please find our best price below." : ""} />
+                  </Field>
                   <div className="flex justify-end">
                     <SubmitButton pendingText="Sending…">
                       <Mail className="h-4 w-4" /> Email to {e.email}

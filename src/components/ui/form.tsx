@@ -1,30 +1,55 @@
 import PasswordInput from "./password-input";
 import { Children, cloneElement, isValidElement, useId, type ComponentProps, type ReactElement, type ReactNode } from "react";
 
-// Form controls. Every input uses the one outlined `.field` style from globals.css.
+// Form controls. Every input uses the one Material outlined `.field` style from globals.css.
 
-/** Label + control + error (or hint) underneath. A single input/select/textarea child gets an id, so clicking the label focuses it. */
+/**
+ * Material outlined text field: the label sits on the outline and turns brand-coloured on focus.
+ * Give it exactly one control (Input, Select, Textarea, PasswordInput) — it gets an id and aria-invalid.
+ * With anything else (radio cards, quantity + unit…) the label is shown above the group instead.
+ */
 export function Field({ label, error, hint, children, className = "" }: { label: ReactNode; error?: string; hint?: ReactNode; children: ReactNode; className?: string }) {
   const autoId = useId();
-  const only = Children.count(children) === 1 && isValidElement(children) ? (children as ReactElement<{ id?: string }>) : null;
+  const only = Children.count(children) === 1 && isValidElement(children) ? (children as ReactElement<{ id?: string; "aria-invalid"?: boolean }>) : null;
   const control = only && [Input, Select, Textarea, PasswordInput, "input", "select", "textarea"].includes(only.type as never) ? only : null;
   const id = control ? (control.props.id ?? autoId) : undefined;
+  const helper = error ? <p className="mt-1 px-3 text-xs text-rose-600">{error}</p> : hint ? <div className="mt-1 px-3 text-xs text-slate-500">{hint}</div> : null;
+
+  if (!control)
+    return (
+      <div className={className}>
+        <div className={`label ${error ? "text-rose-600" : ""}`}>{label}</div>
+        {children}
+        {helper}
+      </div>
+    );
   return (
     <div className={className}>
-      <label className="label" htmlFor={id}>
-        {label}
-      </label>
-      {control ? cloneElement(control, { id }) : children}
-      {error ? <p className="mt-1 text-xs text-rose-600">{error}</p> : hint ? <p className="mt-1 text-xs text-slate-500">{hint}</p> : null}
+      <div className="group relative">
+        {cloneElement(control, { id, "aria-invalid": error ? true : undefined })}
+        <label
+          htmlFor={id}
+          className={`pointer-events-none absolute left-2 top-0 max-w-[calc(100%-1rem)] -translate-y-1/2 truncate bg-white px-1 text-xs leading-4 transition-colors ${
+            error ? "text-rose-600" : "text-slate-600 group-focus-within:text-brand-700"
+          }`}
+        >
+          {label}
+        </label>
+      </div>
+      {helper}
     </div>
   );
 }
 
-export function Input({ className = "", ...props }: ComponentProps<"input">) {
-  return <input {...props} className={`field ${className}`} />;
+/** "sm" is the compact size for table toolbars and filter rows. */
+type ControlSize = { size?: "md" | "sm" };
+const controlSize = (size: ControlSize["size"]) => (size === "sm" ? "h-8 py-0 text-[13px]" : "");
+
+export function Input({ className = "", size, ...props }: Omit<ComponentProps<"input">, "size"> & ControlSize) {
+  return <input {...props} className={`field ${controlSize(size)} ${className}`} />;
 }
-export function Select({ className = "", ...props }: ComponentProps<"select">) {
-  return <select {...props} className={`field ${className}`} />;
+export function Select({ className = "", size, ...props }: Omit<ComponentProps<"select">, "size"> & ControlSize) {
+  return <select {...props} className={`field ${controlSize(size)} ${className}`} />;
 }
 export function Textarea({ className = "", ...props }: ComponentProps<"textarea">) {
   return <textarea {...props} className={`field ${className}`} />;
@@ -32,7 +57,7 @@ export function Textarea({ className = "", ...props }: ComponentProps<"textarea"
 
 /** Responsive grid for fields: 1 column on phones, `cols` from `sm` up. Use `className="sm:col-span-2"` on a Field to widen it. */
 export function FormGrid({ cols = 2, children }: { cols?: 2 | 3 | 4; children: ReactNode }) {
-  return <div className={`grid gap-3 ${{ 2: "sm:grid-cols-2", 3: "sm:grid-cols-3", 4: "sm:grid-cols-2 lg:grid-cols-4" }[cols]}`}>{children}</div>;
+  return <div className={`grid gap-x-3 gap-y-4 ${{ 2: "sm:grid-cols-2", 3: "sm:grid-cols-3", 4: "sm:grid-cols-2 lg:grid-cols-4" }[cols]}`}>{children}</div>;
 }
 
 /** Titled group of fields inside a form card. */
@@ -116,7 +141,7 @@ export function RadioCards({
   cols?: 2 | 3 | 6;
 }) {
   return (
-    <div className={`grid gap-2 ${{ 2: "sm:grid-cols-2", 3: "sm:grid-cols-3", 6: "grid-cols-2 sm:grid-cols-3 lg:grid-cols-6" }[cols]}`}>
+    <div className={`grid gap-2 ${{ 2: "sm:grid-cols-2", 3: "grid-cols-2 sm:grid-cols-3", 6: "grid-cols-2 sm:grid-cols-3 lg:grid-cols-6" }[cols]}`}>
       {options.map((o) => (
         <label
           key={o.value}

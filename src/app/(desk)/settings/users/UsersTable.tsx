@@ -10,7 +10,7 @@ import {
   DataTable,
   Empty,
   Field,
-  FilterChip,
+  FormGrid,
   FormDialog,
   IconButton,
   Input,
@@ -19,7 +19,7 @@ import {
   SearchInput,
   Switch,
   TableCard,
-  TableToolbar,
+  TableTabs,
   useServerAction,
   type Column,
 } from "@/components/ui";
@@ -159,22 +159,23 @@ export default function UsersTable({ users, meId }: { users: UserRow[]; meId: st
     <>
       <TableCard
         toolbar={
-          <TableToolbar
+          <TableTabs
+            tabs={(Object.keys(FILTERS) as Filter[]).map((k) => ({
+              key: k,
+              label: FILTERS[k].label,
+              count: users.filter(FILTERS[k].test).length,
+              selected: filter === k,
+              onClick: () => setFilter(k),
+            }))}
             actions={
-              <Button onClick={() => setEditing("new")}>
-                <UserPlus className="h-4 w-4" /> Add user
-              </Button>
+              <>
+                <SearchInput value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search name or email" />
+                <Button onClick={() => setEditing("new")}>
+                  <UserPlus className="h-4 w-4" /> Add user
+                </Button>
+              </>
             }
-          >
-            <SearchInput value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search name or email" />
-            <div className="flex flex-wrap gap-1.5">
-              {(Object.keys(FILTERS) as Filter[]).map((k) => (
-                <FilterChip key={k} selected={filter === k} onClick={() => setFilter(k)} count={users.filter(FILTERS[k].test).length}>
-                  {FILTERS[k].label}
-                </FilterChip>
-              ))}
-            </div>
-          </TableToolbar>
+          />
         }
       >
         <DataTable
@@ -222,14 +223,14 @@ function UserDialog({ user, isSelf, onClose }: { user: UserRow | null; isSelf: b
     >
       {({ errors: e, values: v }) => (
         <div className="space-y-4">
-          <div className="grid gap-3 sm:grid-cols-2">
+          <FormGrid>
             <Field label="Name *" error={e.name}>
               <Input name="name" defaultValue={v.name ?? user?.name} autoFocus />
             </Field>
             <Field label="Email *" error={e.email}>
               <Input name="email" type="email" defaultValue={v.email ?? user?.email} placeholder="name@example.com" />
             </Field>
-          </div>
+          </FormGrid>
 
           <Field label="Role" hint={isSelf ? "You can't change your own role." : undefined}>
             <RadioCards

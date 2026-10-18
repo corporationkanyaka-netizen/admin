@@ -70,12 +70,13 @@
 }
 
 @layer components {
-  /* Outlined text field (Material) — one look everywhere */
+  /* Material outlined text field — one look everywhere. The label sits on the outline (see Field). */
   .field {
-    @apply block w-full rounded-md border border-[#cfd6df] bg-white px-2.5 py-1.5 text-sm text-ink-900 outline-none transition placeholder:text-slate-400 hover:border-slate-400 focus:border-brand-600 focus:ring-2 focus:ring-brand-500/20 disabled:bg-paper-2 disabled:text-slate-500;
+    @apply block w-full rounded border border-[#aab4c3] bg-white px-3 py-2 text-sm text-ink-900 outline-none transition placeholder:text-slate-400 hover:border-ink-700 focus:border-brand-600 focus:ring-1 focus:ring-brand-600 disabled:border-[#d5dbe3] disabled:bg-paper disabled:text-slate-500 aria-[invalid=true]:border-rose-500 aria-[invalid=true]:focus:ring-rose-500;
   }
+  /* Label above a group of controls (radio cards, quantity + unit…) */
   .label {
-    @apply mb-1 block text-[11px] font-medium uppercase tracking-wide text-slate-500;
+    @apply mb-1.5 block text-xs font-medium text-slate-600;
   }
   /* Elevated surface */
   .card {

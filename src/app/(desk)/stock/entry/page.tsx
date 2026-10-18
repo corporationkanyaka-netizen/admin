@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import { History } from "lucide-react";
 import { prisma } from "@/server/db";
 import { requireUser } from "@/server/auth";
-import { stockBalances } from "@/server/stock";
 import { Alert, Card, CardLink, Empty, List, ListRow, MovementChip, PageHeader } from "@/components/ui";
-import { ago, stockLabel, todayIst } from "@/lib/format";
+import { ago, stockLabel } from "@/lib/format";
+import { stockEntryData } from "../entry-data";
 import StockEntryForm from "./StockEntryForm";
 
 export const metadata: Metadata = { title: "Stock entry" };
@@ -14,11 +14,8 @@ const TYPES = ["PURCHASE", "SALE", "TRANSFER", "RETURN", "ADJUSTMENT", "OPENING"
 export default async function StockEntryPage({ searchParams }: { searchParams: Promise<{ type?: string; product?: string; saved?: string }> }) {
   await requireUser();
   const sp = await searchParams;
-  const [products, warehouses, customers, balances, recent] = await Promise.all([
-    prisma.product.findMany({ where: { active: true }, orderBy: [{ sortOrder: "asc" }, { name: "asc" }] }),
-    prisma.warehouse.findMany({ where: { active: true }, orderBy: { code: "desc" } }),
-    prisma.customer.findMany({ orderBy: { companyName: "asc" }, take: 500, select: { id: true, companyName: true, name: true } }),
-    stockBalances(),
+  const [{ entry }, recent] = await Promise.all([
+    stockEntryData(),
     prisma.stockMovement.findMany({
       orderBy: { createdAt: "desc" },
       take: 10,
@@ -63,22 +60,7 @@ export default async function StockEntryPage({ searchParams }: { searchParams: P
     <>
       {sp.saved && <Alert>Saved. Stock updated.</Alert>}
       <PageHeader title="Stock entry" subtitle="Record what came in, went out or moved. Stock on hand updates instantly." back={{ href: "/stock", label: "Stock on hand" }} />
-      <StockEntryForm
-        products={products.map((p) => ({
-          id: p.id,
-          name: p.name,
-          packing: p.packing,
-          packKg: p.packKg ? Number(p.packKg) : null,
-          reorderKg: Number(p.reorderLevelKg),
-          balances: Object.fromEntries(balances.get(p.id) ?? []),
-        }))}
-        warehouses={warehouses.map((w) => ({ id: w.id, name: w.name }))}
-        customers={customers.map((c) => ({ id: c.id, label: `${c.companyName} · ${c.name}` }))}
-        initialType={TYPES.includes(sp.type ?? "") ? sp.type! : "PURCHASE"}
-        initialProduct={sp.product}
-        today={todayIst()}
-        aside={recentCard}
-      />
+      <StockEntryForm data={entry} initialType={TYPES.includes(sp.type ?? "") ? sp.type! : "PURCHASE"} initialProduct={sp.product} aside={recentCard} />
     </>
   );
 }

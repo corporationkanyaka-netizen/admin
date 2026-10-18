@@ -9,7 +9,6 @@ import {
   DataTable,
   Empty,
   Field,
-  FilterChip,
   FormDialog,
   FormGrid,
   FormSection,
@@ -20,7 +19,7 @@ import {
   Select,
   Switch,
   TableCard,
-  TableToolbar,
+  TableTabs,
   useServerAction,
   type Column,
 } from "@/components/ui";
@@ -134,22 +133,23 @@ export default function ProductsTable({ products }: { products: ProductData[] })
     <>
       <TableCard
         toolbar={
-          <TableToolbar
+          <TableTabs
+            tabs={(Object.keys(FILTERS) as Filter[]).map((k) => ({
+              key: k,
+              label: FILTERS[k].label,
+              count: products.filter(FILTERS[k].test).length,
+              selected: filter === k,
+              onClick: () => setFilter(k),
+            }))}
             actions={
-              <Button onClick={() => setEditing("new")}>
-                <PackagePlus className="h-4 w-4" /> Add product
-              </Button>
+              <>
+                <SearchInput value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search name, make, category, HSN" />
+                <Button onClick={() => setEditing("new")}>
+                  <PackagePlus className="h-4 w-4" /> Add product
+                </Button>
+              </>
             }
-          >
-            <SearchInput value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search name, make, category, HSN" />
-            <div className="flex flex-wrap gap-1.5">
-              {(Object.keys(FILTERS) as Filter[]).map((k) => (
-                <FilterChip key={k} selected={filter === k} onClick={() => setFilter(k)} count={products.filter(FILTERS[k].test).length}>
-                  {FILTERS[k].label}
-                </FilterChip>
-              ))}
-            </div>
-          </TableToolbar>
+          />
         }
       >
         <DataTable
@@ -225,16 +225,18 @@ function ProductDialog({ product: p, onClose }: { product: ProductData | null; o
               <Field label="GST %" error={e.gstRate}>
                 <Input name="gstRate" inputMode="decimal" defaultValue={v.gstRate ?? p?.gstRate ?? 18} className="num" />
               </Field>
-              <Field label="Warn me when stock falls below" error={e.reorderLevel} className="sm:col-span-2">
-                <div className="flex gap-2">
-                  <Input name="reorderLevel" inputMode="decimal" defaultValue={v.reorderLevel ?? reorder.value} className="num flex-1" />
-                  <Select name="reorderUnit" defaultValue={v.reorderUnit ?? reorder.unit} className="w-28">
+              <div className="grid grid-cols-[1fr_7rem] gap-3 sm:col-span-2">
+                <Field label="Warn me when stock falls below" error={e.reorderLevel}>
+                  <Input name="reorderLevel" inputMode="decimal" defaultValue={v.reorderLevel ?? reorder.value} className="num" />
+                </Field>
+                <Field label="Unit" error={e.reorderUnit}>
+                  <Select name="reorderUnit" defaultValue={v.reorderUnit ?? reorder.unit}>
                     <option value="BAGS">bags</option>
                     <option value="KG">kg</option>
                     <option value="MT">MT</option>
                   </Select>
-                </div>
-              </Field>
+                </Field>
+              </div>
             </FormGrid>
           </FormSection>
 

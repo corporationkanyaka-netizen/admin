@@ -2,15 +2,16 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowDownToLine, ArrowLeftRight, ArrowUpFromLine, Boxes, Download, PackageSearch, ScrollText, SlidersHorizontal } from "lucide-react";
 import { requireUser } from "@/server/auth";
-import { stockOverview } from "@/server/stock";
-import { Alert, ButtonAnchor, ButtonLink, Chip, DataTable, Empty, FilterChip, IconLink, PageHeader, ProgressBar, SearchField, Stat, StatGrid, TableCard, TableToolbar, type Column } from "@/components/ui";
+import type { stockOverview } from "@/server/stock";
+import { Alert, ButtonAnchor, Chip, DataTable, Empty, IconLink, PageHeader, ProgressBar, SearchField, Stat, StatGrid, TableCard, TableTabs, type Column } from "@/components/ui";
 import { kgLabel, stockLabel } from "@/lib/format";
+import { stockEntryData } from "./entry-data";
+import { StockEntryButton, StockEntryIconButton, StockEntryProvider } from "./StockEntryDialog";
+import { shortName } from "./StockEntryFields";
 
 export const metadata: Metadata = { title: "Stock on hand" };
 
 type Row = Awaited<ReturnType<typeof stockOverview>>["rows"][number];
-
-const shortName = (name: string) => name.replace(/ warehouse$/i, "");
 
 function Qty({ kg, packKg, strong }: { kg: number; packKg: Parameters<typeof stockLabel>[1]; strong?: boolean }) {
   return (
@@ -36,7 +37,7 @@ function Level({ r }: { r: Row }) {
 export default async function StockPage({ searchParams }: { searchParams: Promise<{ q?: string; show?: string }> }) {
   await requireUser();
   const { q = "", show } = await searchParams;
-  const { warehouses, rows: all } = await stockOverview();
+  const { warehouses, rows: all, entry } = await stockEntryData();
   const needle = q.trim().toLowerCase();
   const rows = all.filter(
     (r) => (!needle || `${r.product.name} ${r.product.make}`.toLowerCase().includes(needle)) && (show !== "low" || r.low) && (show !== "instock" || r.total > 0),
@@ -70,47 +71,44 @@ export default async function StockPage({ searchParams }: { searchParams: Promis
       header: <span className="sr-only">Actions</span>,
       align: "right",
       width: "w-36",
-      cell: (r) => {
-        const entry = (type: string) => `/stock/entry?type=${type}&product=${r.product.id}`;
-        return (
-          <div className="flex justify-end gap-0.5">
-            <IconLink href={entry("PURCHASE")} label={`Stock in · ${r.product.name}`}>
-              <ArrowDownToLine className="h-4 w-4 text-emerald-600" />
-            </IconLink>
-            <IconLink href={entry("SALE")} label={`Stock out · ${r.product.name}`}>
-              <ArrowUpFromLine className="h-4 w-4 text-rose-600" />
-            </IconLink>
-            <IconLink href={entry("TRANSFER")} label={`Transfer · ${r.product.name}`}>
-              <ArrowLeftRight className="h-4 w-4 text-sky-600" />
-            </IconLink>
-            <IconLink href={`/stock/${r.product.id}`} label={`View register · ${r.product.name}`}>
-              <ScrollText className="h-4 w-4" />
-            </IconLink>
-          </div>
-        );
-      },
+      cell: (r) => (
+        <div className="flex justify-end gap-0.5">
+          <StockEntryIconButton type="PURCHASE" productId={r.product.id} label={`Stock in · ${r.product.name}`}>
+            <ArrowDownToLine className="h-4 w-4 text-emerald-600" />
+          </StockEntryIconButton>
+          <StockEntryIconButton type="SALE" productId={r.product.id} label={`Stock out · ${r.product.name}`}>
+            <ArrowUpFromLine className="h-4 w-4 text-rose-600" />
+          </StockEntryIconButton>
+          <StockEntryIconButton type="TRANSFER" productId={r.product.id} label={`Transfer · ${r.product.name}`}>
+            <ArrowLeftRight className="h-4 w-4 text-sky-600" />
+          </StockEntryIconButton>
+          <IconLink href={`/stock/${r.product.id}`} label={`View register · ${r.product.name}`}>
+            <ScrollText className="h-4 w-4" />
+          </IconLink>
+        </div>
+      ),
     },
   ];
 
   return (
-    <>
+    <StockEntryProvider data={entry}>
       <PageHeader
         title="Stock on hand"
         subtitle="Live stock in each warehouse, worked out from every entry in the stock register."
         actions={
           <>
-            <ButtonLink href="/stock/entry?type=PURCHASE" variant="secondary">
+            <StockEntryButton type="PURCHASE">
               <ArrowDownToLine className="h-4 w-4 text-emerald-600" /> Stock in
-            </ButtonLink>
-            <ButtonLink href="/stock/entry?type=SALE" variant="secondary">
+            </StockEntryButton>
+            <StockEntryButton type="SALE">
               <ArrowUpFromLine className="h-4 w-4 text-rose-600" /> Stock out
-            </ButtonLink>
-            <ButtonLink href="/stock/entry?type=TRANSFER" variant="secondary">
+            </StockEntryButton>
+            <StockEntryButton type="TRANSFER">
               <ArrowLeftRight className="h-4 w-4 text-sky-600" /> Transfer
-            </ButtonLink>
-            <ButtonLink href="/stock/entry?type=ADJUSTMENT" variant="secondary">
+            </StockEntryButton>
+            <StockEntryButton type="ADJUSTMENT">
               <SlidersHorizontal className="h-4 w-4 text-amber-600" /> Adjust
-            </ButtonLink>
+            </StockEntryButton>
           </>
         }
       />
@@ -135,26 +133,21 @@ export default async function StockPage({ searchParams }: { searchParams: Promis
 
       <TableCard
         toolbar={
-          <TableToolbar
+          <TableTabs
+            tabs={[
+              { key: "all", label: "All products", count: all.length, selected: !show, href: href({ show: undefined }) },
+              { key: "instock", label: "In stock", count: all.filter((r) => r.total > 0).length, selected: show === "instock", href: href({ show: "instock" }) },
+              { key: "low", label: "Low stock", count: all.filter((r) => r.low).length, selected: show === "low", href: href({ show: "low" }) },
+            ]}
             actions={
-              <ButtonAnchor href="/stock/export" download variant="ghost">
-                <Download className="h-4 w-4" /> Excel
-              </ButtonAnchor>
+              <>
+                <SearchField defaultValue={q} placeholder="Search product or make…" hidden={{ show }} />
+                <ButtonAnchor href="/stock/export" download variant="ghost">
+                  <Download className="h-4 w-4" /> Excel
+                </ButtonAnchor>
+              </>
             }
-          >
-            <SearchField defaultValue={q} placeholder="Search product or make…" hidden={{ show }} />
-            <div className="flex flex-wrap gap-1.5">
-              <FilterChip href={href({ show: undefined })} selected={!show} count={all.length}>
-                All products
-              </FilterChip>
-              <FilterChip href={href({ show: "instock" })} selected={show === "instock"} count={all.filter((r) => r.total > 0).length}>
-                In stock
-              </FilterChip>
-              <FilterChip href={href({ show: "low" })} selected={show === "low"} count={all.filter((r) => r.low).length}>
-                Low stock
-              </FilterChip>
-            </div>
-          </TableToolbar>
+          />
         }
       >
         <DataTable
@@ -169,6 +162,6 @@ export default async function StockPage({ searchParams }: { searchParams: Promis
           }
         />
       </TableCard>
-    </>
+    </StockEntryProvider>
   );
 }

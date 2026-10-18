@@ -4,7 +4,7 @@ import { ChevronLeft, ChevronRight, Search } from "lucide-react";
 
 // Material data tables: surface, toolbar, header/body cells, column-driven DataTable, pagination, filter chips.
 
-export const th = "sticky top-0 z-[1] h-9 border-b border-line bg-[#f7f9fb] px-3 text-left text-[11px] font-semibold uppercase tracking-wide text-slate-500";
+export const th = "sticky top-0 z-[2] h-9 border-b border-line bg-[#f7f9fb] px-3 text-left text-[11px] font-semibold uppercase tracking-wide text-slate-500";
 export const td = "border-b border-line/70 px-3 py-2 align-middle";
 
 type Align = "left" | "right" | "center";
@@ -17,10 +17,13 @@ export function Td({ align, className = "", ...props }: ComponentProps<"td"> & {
   return <td {...props} className={`${td} ${alignClass(align)} ${className}`} />;
 }
 
-/** Table that scrolls sideways on phones. Use with Th / Td, or use DataTable for column-driven tables. */
+/**
+ * Scrolling table: sideways on phones; inside a TableCard on desktop it also scrolls down under a sticky header.
+ * Use with Th / Td, or use DataTable for column-driven tables.
+ */
 export function Table({ children, minWidth = 640 }: { children: ReactNode; minWidth?: number }) {
   return (
-    <div className="scroll-thin overflow-x-auto">
+    <div className="scroll-thin min-h-0 flex-1 overflow-auto">
       <table className="w-full border-collapse text-[13px]" style={{ minWidth }}>
         {children}
       </table>
@@ -28,13 +31,66 @@ export function Table({ children, minWidth = 640 }: { children: ReactNode; minWi
   );
 }
 
-/** Card surface for a table: toolbar on top, table, footer (pagination). */
+/**
+ * Card surface for a table: toolbar on top, table, footer (pagination).
+ * On desktop it shrinks to the space left on screen and only the table scrolls; toolbar and footer stay put.
+ * Wrap the table in `TableBody` if you need an extra element around it (e.g. a phone-only list).
+ */
 export function TableCard({ toolbar, footer, children }: { toolbar?: ReactNode; footer?: ReactNode; children: ReactNode }) {
   return (
-    <div className="card overflow-hidden">
-      {toolbar}
-      {children}
-      {footer}
+    <div className="card flex min-h-0 shrink flex-col overflow-hidden lg:min-h-48">
+      {toolbar && <div className="shrink-0">{toolbar}</div>}
+      <div className="flex min-h-0 flex-1 flex-col">{children}</div>
+      {footer && <div className="shrink-0 border-t border-line">{footer}</div>}
+    </div>
+  );
+}
+
+/**
+ * Pass-through wrapper that keeps a TableCard's scrolling working (use for responsive table/list swaps).
+ * `scroll` makes its own content scroll — for a List, which (unlike Table) has no scroll area of its own.
+ */
+export function TableBody({ className = "", scroll = false, children }: { className?: string; scroll?: boolean; children: ReactNode }) {
+  return (
+    <div className={`min-h-0 flex-1 flex-col ${className || "flex"}`}>
+      {scroll ? <div className="scroll-thin min-h-0 flex-1 overflow-auto">{children}</div> : children}
+    </div>
+  );
+}
+
+export type FilterTab = { key: string; label: ReactNode; count?: number; selected: boolean; href?: string; onClick?: () => void };
+
+/** Status filter as Material tabs along the top of a table, with optional search/actions on the right. */
+export function TableTabs({ tabs, actions }: { tabs: FilterTab[]; actions?: ReactNode }) {
+  return (
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-line px-3">
+      <div role="tablist" className="scroll-thin -mb-px flex min-w-0 flex-1 overflow-x-auto">
+        {tabs.map((t) => {
+          const cls = `inline-flex h-11 shrink-0 cursor-pointer items-center gap-1.5 border-b-2 px-3 text-[13px] transition ${
+            t.selected ? "border-brand-600 font-medium text-brand-700" : "border-transparent text-slate-600 hover:border-slate-300 hover:text-ink-900"
+          }`;
+          const body = (
+            <>
+              {t.label}
+              {t.count !== undefined && (
+                <span className={`num min-w-5 rounded-full px-1.5 text-center text-[11px] font-medium ${t.selected ? "bg-brand-100 text-brand-700" : "bg-paper-2 text-slate-500"}`}>
+                  {t.count}
+                </span>
+              )}
+            </>
+          );
+          return t.href ? (
+            <Link key={t.key} href={t.href} role="tab" aria-selected={t.selected} className={cls}>
+              {body}
+            </Link>
+          ) : (
+            <button key={t.key} type="button" role="tab" aria-selected={t.selected} onClick={t.onClick} className={cls}>
+              {body}
+            </button>
+          );
+        })}
+      </div>
+      {actions && <div className="flex flex-wrap items-center gap-1.5 py-1.5">{actions}</div>}
     </div>
   );
 }
@@ -115,11 +171,11 @@ export function TableToolbar({ children, actions }: { children?: ReactNode; acti
 }
 
 /** Text input with a search icon. Controlled (pass value/onChange) or inside a GET form (pass name). */
-export function SearchInput({ className = "w-full sm:w-64", ...props }: Omit<ComponentProps<"input">, "type"> & { className?: string }) {
+export function SearchInput({ className = "w-full sm:w-72", ...props }: Omit<ComponentProps<"input">, "type"> & { className?: string }) {
   return (
     <div className={`relative ${className}`}>
       <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-      <input type="search" {...props} className="field h-8 pl-8" />
+      <input type="search" aria-label={props.placeholder} {...props} className="field h-8 pl-8" />
     </div>
   );
 }
@@ -127,7 +183,7 @@ export function SearchInput({ className = "w-full sm:w-64", ...props }: Omit<Com
 /** Search box that submits as a plain GET form (server-filtered lists). */
 export function SearchField({ name = "q", defaultValue, placeholder, hidden }: { name?: string; defaultValue?: string; placeholder: string; hidden?: Record<string, string | undefined> }) {
   return (
-    <form className="w-full sm:w-64">
+    <form className="w-full sm:w-72">
       {Object.entries(hidden ?? {}).map(([k, v]) => (v ? <input key={k} type="hidden" name={k} value={v} /> : null))}
       <SearchInput name={name} defaultValue={defaultValue} placeholder={placeholder} className="w-full" />
     </form>

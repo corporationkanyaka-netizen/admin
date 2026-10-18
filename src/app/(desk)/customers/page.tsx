@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { prisma } from "@/server/db";
 import { requireUser } from "@/server/auth";
-import { FilterChip, PageHeader, Pagination, SearchField, TableToolbar } from "@/components/ui";
+import { PageHeader, Pagination, SearchField, TableTabs } from "@/components/ui";
 import { ago } from "@/lib/format";
 import type { Prisma } from "@/generated/prisma/client";
 import CustomersTable from "./CustomersTable";
@@ -16,6 +16,10 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
   const show = sp.show === "open" || sp.show === "won" ? sp.show : undefined;
   const page = Math.max(1, Number(sp.page) || 1);
   const digits = q.replace(/\D/g, "");
+  const showWhere: Record<string, Prisma.CustomerWhereInput> = {
+    open: { enquiries: { some: { status: { in: ["NEW", "CONTACTED", "QUOTED"] } } } },
+    won: { enquiries: { some: { status: "WON" } } },
+  };
   const where: Prisma.CustomerWhereInput = {
     ...(q
       ? {
@@ -28,11 +32,10 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
           ],
         }
       : {}),
-    ...(show === "open" ? { enquiries: { some: { status: { in: ["NEW", "CONTACTED", "QUOTED"] } } } } : {}),
-    ...(show === "won" ? { enquiries: { some: { status: "WON" } } } : {}),
+    ...(show ? showWhere[show] : {}),
   };
 
-  const [customers, total] = await Promise.all([
+  const [customers, total, allCount, openCount, wonCount] = await Promise.all([
     prisma.customer.findMany({
       where,
       orderBy: { updatedAt: "desc" },
@@ -43,6 +46,9 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
       },
     }),
     prisma.customer.count({ where }),
+    prisma.customer.count(),
+    prisma.customer.count({ where: showWhere.open }),
+    prisma.customer.count({ where: showWhere.won }),
   ]);
   const href = (p: Record<string, string | number | undefined>) => {
     const params = new URLSearchParams();
@@ -56,19 +62,14 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
       <CustomersTable
         emptyTitle={q ? `No customer matches “${q}”` : "No customers here"}
         toolbar={
-          <TableToolbar actions={<SearchField defaultValue={q} placeholder="Search company, person, phone, GSTIN…" hidden={{ show }} />}>
-            <div className="flex flex-wrap gap-1.5">
-              <FilterChip href={href({ show: undefined })} selected={!show}>
-                All
-              </FilterChip>
-              <FilterChip href={href({ show: "open" })} selected={show === "open"}>
-                With open enquiries
-              </FilterChip>
-              <FilterChip href={href({ show: "won" })} selected={show === "won"}>
-                Have bought
-              </FilterChip>
-            </div>
-          </TableToolbar>
+          <TableTabs
+            tabs={[
+              { key: "all", label: "All", count: allCount, selected: !show, href: href({ show: undefined }) },
+              { key: "open", label: "With open enquiries", count: openCount, selected: show === "open", href: href({ show: "open" }) },
+              { key: "won", label: "Have bought", count: wonCount, selected: show === "won", href: href({ show: "won" }) },
+            ]}
+            actions={<SearchField defaultValue={q} placeholder="Search company, person, phone, GSTIN…" hidden={{ show }} />}
+          />
         }
         footer={total > 0 && <Pagination page={page} pageSize={PAGE_SIZE} total={total} href={(p) => href({ page: p })} />}
         customers={customers.map((c) => ({

@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import { Alert, Input, SubmitButton, TextLink } from "@/components/ui";
+import { Alert, Field, Input, SubmitButton, TextLink } from "@/components/ui";
 import { codeAction, resendAction, type AuthState } from "../actions";
 
 export default function CodeForm({ sentTo }: { sentTo: string }) {
@@ -26,18 +26,19 @@ export default function CodeForm({ sentTo }: { sentTo: string }) {
             {resent.error}
           </Alert>
         )}
-        <Input
-          name="code"
-          aria-label="6-digit code"
-          inputMode="numeric"
-          autoComplete="one-time-code"
-          pattern="[0-9 ]{6,7}"
-          maxLength={7}
-          required
-          autoFocus
-          placeholder="••• •••"
-          className="py-3 text-center font-mono text-2xl tracking-[0.5em]"
-        />
+        <Field label="6-digit code">
+          <Input
+            name="code"
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            pattern="[0-9 ]{6,7}"
+            maxLength={7}
+            required
+            autoFocus
+            placeholder="••• •••"
+            className="py-3 text-center font-mono text-2xl tracking-[0.5em]"
+          />
+        </Field>
         <SubmitButton pendingText="Checking…" size="lg" className="w-full">
           Verify & sign in
         </SubmitButton>

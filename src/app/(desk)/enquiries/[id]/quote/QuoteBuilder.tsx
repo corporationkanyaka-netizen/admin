@@ -82,26 +82,19 @@ export default function QuoteBuilder({
     });
   };
 
-  const err = (k: string) => errors[k] && <p className="mt-1 text-xs text-rose-600">{errors[k]}</p>;
-  const cols = "md:grid-cols-[minmax(0,2.2fr)_0.8fr_0.8fr_1fr_0.6fr_1fr_36px]";
+  const lineErr = (i: number, k: string) => errors[`items.${i}.${k}`];
 
   return (
     <div className="space-y-3">
       <Card title="Items" pad={false}>
-        <div className={`hidden gap-2 border-b border-line bg-[#f7f9fb] px-3 py-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500 md:grid ${cols}`}>
-          <span>Item</span>
-          <span>Qty</span>
-          <span>Unit</span>
-          <span>Rate (₹ / unit)</span>
-          <span>GST %</span>
-          <span className="text-right">Amount</span>
-          <span />
-        </div>
         <ul className="divide-y divide-line/70">
           {lines.map((l, i) => (
-            <li key={l.key} className={`grid grid-cols-2 gap-2 px-3 py-2 md:items-start ${cols}`}>
-              <div className="col-span-2 space-y-1.5 md:col-span-1">
-                <Select value={l.productSlug ?? ""} onChange={(e) => pickProduct(l.key, e.target.value)} className="py-1.5 text-xs" aria-label="Product">
+            <li
+              key={l.key}
+              className="grid grid-cols-2 items-start gap-x-2 gap-y-4 px-3 pb-3 pt-4 sm:grid-cols-4 xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1.6fr)_5.5rem_6rem_7rem_4.5rem_11rem]"
+            >
+              <Field label="Product" className="col-span-2 xl:col-span-1">
+                <Select value={l.productSlug ?? ""} onChange={(e) => pickProduct(l.key, e.target.value)}>
                   <option value="">Custom item</option>
                   {products.map((p) => (
                     <option key={p.slug} value={p.slug}>
@@ -109,35 +102,35 @@ export default function QuoteBuilder({
                     </option>
                   ))}
                 </Select>
-                <Input value={l.description} onChange={(e) => update(l.key, { description: e.target.value })} placeholder="Description" aria-label="Description" />
-                {err(`items.${i}.description`)}
+              </Field>
+              <Field label="Description" error={lineErr(i, "description")} className="col-span-2 xl:col-span-1">
+                <Input value={l.description} onChange={(e) => update(l.key, { description: e.target.value })} />
+              </Field>
+              <Field label="Qty" error={lineErr(i, "quantity")}>
+                <Input value={l.quantity} onChange={(e) => update(l.key, { quantity: e.target.value })} inputMode="decimal" className="num" />
+              </Field>
+              <Field label="Unit">
+                <Select value={l.unit} onChange={(e) => update(l.key, { unit: e.target.value })}>
+                  {UNITS.map((u) => (
+                    <option key={u} value={u}>
+                      {UNIT_LABEL[u]}
+                    </option>
+                  ))}
+                </Select>
+              </Field>
+              <Field label="Rate (₹ / unit)" error={lineErr(i, "unitPrice")}>
+                <Input value={l.unitPrice} onChange={(e) => update(l.key, { unitPrice: e.target.value })} inputMode="decimal" placeholder="0.00" className="num" />
+              </Field>
+              <Field label="GST %">
+                <Input value={l.gstRate} onChange={(e) => update(l.key, { gstRate: e.target.value })} inputMode="decimal" className="num" />
+              </Field>
+              <div className="col-span-2 flex h-[38px] items-center justify-end gap-2 sm:col-span-4 xl:col-span-1">
+                <span className="text-xs text-slate-500">Amount</span>
+                <span className="num text-sm font-medium text-ink-950">{inr(n(l.quantity) * n(l.unitPrice))}</span>
+                <IconButton label="Remove line" tone="danger" onClick={() => setLines((ls) => ls.filter((x) => x.key !== l.key))} disabled={lines.length === 1}>
+                  <Trash2 className="h-4 w-4" />
+                </IconButton>
               </div>
-              <div>
-                <Input value={l.quantity} onChange={(e) => update(l.key, { quantity: e.target.value })} inputMode="decimal" placeholder="Qty" className="num" aria-label="Quantity" />
-                {err(`items.${i}.quantity`)}
-              </div>
-              <Select value={l.unit} onChange={(e) => update(l.key, { unit: e.target.value })} aria-label="Unit">
-                {UNITS.map((u) => (
-                  <option key={u} value={u}>
-                    {UNIT_LABEL[u]}
-                  </option>
-                ))}
-              </Select>
-              <div>
-                <Input value={l.unitPrice} onChange={(e) => update(l.key, { unitPrice: e.target.value })} inputMode="decimal" placeholder="0.00" className="num" aria-label="Rate" />
-                {err(`items.${i}.unitPrice`)}
-              </div>
-              <Input value={l.gstRate} onChange={(e) => update(l.key, { gstRate: e.target.value })} inputMode="decimal" className="num" aria-label="GST %" />
-              <div className="num self-center text-right text-sm font-medium text-ink-950 max-md:col-span-1">{inr(n(l.quantity) * n(l.unitPrice))}</div>
-              <IconButton
-                label="Remove line"
-                tone="danger"
-                onClick={() => setLines((ls) => ls.filter((x) => x.key !== l.key))}
-                disabled={lines.length === 1}
-                className="self-center justify-self-end"
-              >
-                <Trash2 className="h-4 w-4" />
-              </IconButton>
             </li>
           ))}
         </ul>

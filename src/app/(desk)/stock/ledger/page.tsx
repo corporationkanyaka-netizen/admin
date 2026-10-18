@@ -24,7 +24,6 @@ export default async function LedgerPage({ searchParams }: { searchParams: Promi
   ]);
   const filters = Object.entries(sp).filter((e): e is [string, string] => Boolean(e[1]));
   const exportHref = `/stock/export?${new URLSearchParams([...filters, ["ledger", "1"]])}`;
-  const compact = "h-8 w-auto py-0 text-[13px]";
 
   return (
     <>
@@ -38,8 +37,8 @@ export default async function LedgerPage({ searchParams }: { searchParams: Promi
               </ButtonAnchor>
             }
           >
-            <form className="flex flex-wrap items-center gap-1.5">
-              <Select name="product" defaultValue={sp.product ?? ""} aria-label="Product" className={compact}>
+            <form className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
+              <Select name="product" defaultValue={sp.product ?? ""} aria-label="Product" size="sm" className="w-auto max-w-full sm:max-w-56">
                 <option value="">All products</option>
                 {products.map((p) => (
                   <option key={p.id} value={p.id}>
@@ -47,7 +46,7 @@ export default async function LedgerPage({ searchParams }: { searchParams: Promi
                   </option>
                 ))}
               </Select>
-              <Select name="warehouse" defaultValue={sp.warehouse ?? ""} aria-label="Warehouse" className={compact}>
+              <Select name="warehouse" defaultValue={sp.warehouse ?? ""} aria-label="Warehouse" size="sm" className="w-auto max-w-full">
                 <option value="">All warehouses</option>
                 {warehouses.map((w) => (
                   <option key={w.id} value={w.id}>
@@ -55,7 +54,7 @@ export default async function LedgerPage({ searchParams }: { searchParams: Promi
                   </option>
                 ))}
               </Select>
-              <Select name="type" defaultValue={sp.type ?? ""} aria-label="Entry type" className={compact}>
+              <Select name="type" defaultValue={sp.type ?? ""} aria-label="Entry type" size="sm" className="w-auto max-w-full">
                 <option value="">All entries</option>
                 {(Object.keys(MOVEMENT) as MovementKey[]).map((k) => (
                   <option key={k} value={k}>
@@ -63,9 +62,9 @@ export default async function LedgerPage({ searchParams }: { searchParams: Promi
                   </option>
                 ))}
               </Select>
-              <Input type="date" name="from" defaultValue={sp.from} aria-label="From date" className={compact} />
-              <span className="text-xs text-slate-400">to</span>
-              <Input type="date" name="to" defaultValue={sp.to} aria-label="To date" className={compact} />
+              <Input type="date" name="from" defaultValue={sp.from} aria-label="From date" size="sm" className="w-auto max-w-full" />
+              <span className="text-xs text-slate-500">to</span>
+              <Input type="date" name="to" defaultValue={sp.to} aria-label="To date" size="sm" className="w-auto max-w-full" />
               <Button type="submit" variant="tonal">
                 Apply
               </Button>

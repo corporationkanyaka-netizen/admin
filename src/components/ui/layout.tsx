@@ -80,7 +80,7 @@ export function SplitLayout({ children, aside, asideWidth = "md" }: { children: 
   return (
     <div className={`grid items-start gap-3 ${cols}`}>
       <div className="min-w-0 space-y-3">{children}</div>
-      <aside className="space-y-3 xl:sticky xl:top-16">{aside}</aside>
+      <aside className="space-y-3 xl:sticky xl:top-0">{aside}</aside>
     </div>
   );
 }

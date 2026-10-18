@@ -8,15 +8,15 @@ import {
   DataTable,
   Empty,
   EnquiryBadge,
-  FilterChip,
   IconLink,
   List,
   ListRow,
   PageHeader,
   Pagination,
   SearchField,
+  TableBody,
   TableCard,
-  TableToolbar,
+  TableTabs,
   type Column,
 } from "@/components/ui";
 import { SOURCE } from "@/lib/labels";
@@ -28,11 +28,11 @@ import EnquiryRowActions from "./EnquiryRowActions";
 export const metadata: Metadata = { title: "Enquiries" };
 
 const TABS: { key: string; label: string; where: Prisma.EnquiryWhereInput; statuses: EnquiryStatus[] }[] = [
+  { key: "all", label: "All", where: { status: { not: "SPAM" } }, statuses: ["NEW", "CONTACTED", "QUOTED", "WON", "LOST"] },
   { key: "NEW", label: "Needs reply", where: { status: "NEW" }, statuses: ["NEW"] },
   { key: "open", label: "In progress", where: { status: { in: ["CONTACTED", "QUOTED"] } }, statuses: ["CONTACTED", "QUOTED"] },
   { key: "WON", label: "Won", where: { status: "WON" }, statuses: ["WON"] },
   { key: "LOST", label: "Lost", where: { status: "LOST" }, statuses: ["LOST"] },
-  { key: "all", label: "All", where: { status: { not: "SPAM" } }, statuses: ["NEW", "CONTACTED", "QUOTED", "WON", "LOST"] },
   { key: "SPAM", label: "Spam", where: { status: "SPAM" }, statuses: ["SPAM"] },
 ];
 const PAGE_SIZE = 25;
@@ -42,7 +42,7 @@ const SOURCE_ICON: Record<string, typeof Globe> = { CONTACT_PAGE: Globe, QUOTE_M
 export default async function EnquiriesPage({ searchParams }: { searchParams: Promise<{ status?: string; q?: string; page?: string }> }) {
   await requireUser();
   const sp = await searchParams;
-  const tab = TABS.find((t) => t.key === sp.status) ?? TABS[4];
+  const tab = TABS.find((t) => t.key === sp.status) ?? TABS[0];
   const q = sp.q?.trim().slice(0, 100) ?? "";
   const page = Math.max(1, Number(sp.page) || 1);
   const digits = q.replace(/\D/g, "");
@@ -181,20 +181,15 @@ export default async function EnquiriesPage({ searchParams }: { searchParams: Pr
 
       <TableCard
         toolbar={
-          <TableToolbar actions={<SearchField defaultValue={q} placeholder="Search company, phone, product, ref…" hidden={{ status: tab.key }} />}>
-            <div className="scroll-thin -mx-1 flex min-w-0 flex-1 gap-1.5 overflow-x-auto px-1">
-              {TABS.map((t) => (
-                <FilterChip key={t.key} href={href({ status: t.key, page: 1 })} selected={t.key === tab.key} count={countOf(t.statuses)}>
-                  {t.label}
-                </FilterChip>
-              ))}
-            </div>
-          </TableToolbar>
+          <TableTabs
+            tabs={TABS.map((t) => ({ key: t.key, label: t.label, count: countOf(t.statuses), selected: t.key === tab.key, href: href({ status: t.key, page: 1 }) }))}
+            actions={<SearchField defaultValue={q} placeholder="Search company, phone, product, ref…" hidden={{ status: tab.key }} />}
+          />
         }
         footer={total > 0 && <Pagination page={page} pageSize={PAGE_SIZE} total={total} href={(p) => href({ page: p })} />}
       >
         {/* Phones: compact list */}
-        <div className="md:hidden">
+        <TableBody className="flex md:hidden" scroll>
           {rows.length === 0 ? (
             empty
           ) : (
@@ -221,12 +216,12 @@ export default async function EnquiriesPage({ searchParams }: { searchParams: Pr
               ))}
             </List>
           )}
-        </div>
+        </TableBody>
 
         {/* Tablets and desktops: data table */}
-        <div className="hidden md:block">
+        <TableBody className="hidden md:flex">
           <DataTable columns={columns} rows={rows} rowKey={(e) => e.id} rowHref={(e) => `/enquiries/${e.id}`} rowLabel={(e) => `Open ${e.companyName}`} minWidth={900} empty={empty} />
-        </div>
+        </TableBody>
       </TableCard>
     </>
   );

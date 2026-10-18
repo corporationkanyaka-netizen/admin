@@ -3,10 +3,12 @@ import { notFound } from "next/navigation";
 import { ArrowDownToLine, ArrowLeftRight, ArrowUpFromLine, Boxes, ScrollText } from "lucide-react";
 import { prisma } from "@/server/db";
 import { requireUser } from "@/server/auth";
-import { Alert, ButtonLink, Card, Empty, IconBadge, RecordHeader, Stat, StatGrid } from "@/components/ui";
+import { Alert, Card, Empty, IconBadge, RecordHeader, Stat, StatGrid } from "@/components/ui";
 import LedgerTable from "@/components/LedgerTable";
 import { kgLabel, stockLabel } from "@/lib/format";
 import { isUuid } from "@/lib/ids";
+import { stockEntryData } from "../entry-data";
+import { StockEntryButton, StockEntryProvider } from "../StockEntryDialog";
 
 export const metadata: Metadata = { title: "Stock card" };
 
@@ -16,7 +18,7 @@ export default async function ProductStockPage({ params, searchParams }: { param
   const { saved } = await searchParams;
   if (!isUuid(productId)) notFound();
 
-  const [product, warehouses, movements] = await Promise.all([
+  const [product, warehouses, movements, { entry }] = await Promise.all([
     prisma.product.findUnique({ where: { id: productId } }),
     prisma.warehouse.findMany({ where: { active: true }, orderBy: { code: "desc" } }),
     prisma.stockMovement.findMany({
@@ -24,6 +26,7 @@ export default async function ProductStockPage({ params, searchParams }: { param
       orderBy: [{ occurredOn: "asc" }, { createdAt: "asc" }],
       include: { product: true, warehouse: true },
     }),
+    stockEntryData(),
   ]);
   if (!product) notFound();
 
@@ -35,7 +38,7 @@ export default async function ProductStockPage({ params, searchParams }: { param
   const reorder = Number(product.reorderLevelKg);
 
   return (
-    <>
+    <StockEntryProvider data={entry}>
       {saved && <Alert>Saved. Stock updated.</Alert>}
       <RecordHeader
         back={{ href: "/stock", label: "Stock on hand" }}
@@ -48,15 +51,15 @@ export default async function ProductStockPage({ params, searchParams }: { param
         meta={[product.make, product.packing, `GST ${Number(product.gstRate)}%`, product.hsnCode ? `HSN ${product.hsnCode}` : "HSN not set"]}
         actions={
           <>
-            <ButtonLink href={`/stock/entry?type=PURCHASE&product=${product.id}`} variant="secondary">
+            <StockEntryButton type="PURCHASE" productId={product.id}>
               <ArrowDownToLine className="h-4 w-4 text-emerald-600" /> Stock in
-            </ButtonLink>
-            <ButtonLink href={`/stock/entry?type=SALE&product=${product.id}`} variant="secondary">
+            </StockEntryButton>
+            <StockEntryButton type="SALE" productId={product.id}>
               <ArrowUpFromLine className="h-4 w-4 text-rose-600" /> Stock out
-            </ButtonLink>
-            <ButtonLink href={`/stock/entry?type=TRANSFER&product=${product.id}`} variant="secondary">
+            </StockEntryButton>
+            <StockEntryButton type="TRANSFER" productId={product.id}>
               <ArrowLeftRight className="h-4 w-4 text-sky-600" /> Transfer
-            </ButtonLink>
+            </StockEntryButton>
           </>
         }
       />
@@ -75,9 +78,9 @@ export default async function ProductStockPage({ params, searchParams }: { param
             icon={<ScrollText className="h-5 w-5" />}
             title="No entries yet"
             action={
-              <ButtonLink href={`/stock/entry?type=OPENING&product=${product.id}`} variant="tonal">
+              <StockEntryButton type="OPENING" productId={product.id} variant="tonal">
                 Add opening stock
-              </ButtonLink>
+              </StockEntryButton>
             }
           >
             Start with the opening stock for each warehouse.
@@ -86,6 +89,6 @@ export default async function ProductStockPage({ params, searchParams }: { param
           <LedgerTable rows={rows} showProduct={false} />
         )}
       </Card>
-    </>
+    </StockEntryProvider>
   );
 }

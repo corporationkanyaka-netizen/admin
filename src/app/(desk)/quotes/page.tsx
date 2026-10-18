@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { CheckCircle2, FilePen, FileText, Send, XCircle } from "lucide-react";
 import { prisma } from "@/server/db";
 import { requireUser } from "@/server/auth";
-import { Avatar, DataTable, Empty, FilterChip, PageHeader, Pagination, QuoteBadge, SearchField, Stat, StatGrid, TableCard, TableToolbar, type Column } from "@/components/ui";
+import { Avatar, DataTable, Empty, PageHeader, Pagination, QuoteBadge, SearchField, Stat, StatGrid, TableCard, TableTabs, type Column } from "@/components/ui";
 import { QUOTE_STATUS, type QuoteStatusKey } from "@/lib/labels";
 import { date, inr } from "@/lib/format";
 import type { Prisma } from "@/generated/prisma/client";
@@ -103,31 +103,25 @@ export default async function QuotesPage({ searchParams }: { searchParams: Promi
         {TILES.map(({ status: s, icon: Icon, tone }) => (
           <Stat
             key={s}
-            href={href({ status: filter === s ? undefined : s })}
+            href={href({ status: s })}
             icon={<Icon className="h-4 w-4" />}
             tone={tone}
             label={QUOTE_STATUS[s].label}
             value={inr(sumOf(s)?._sum.total ?? 0, 0)}
             hint={`${sumOf(s)?._count ?? 0} ${sumOf(s)?._count === 1 ? "quotation" : "quotations"}`}
-            selected={filter === s}
           />
         ))}
       </StatGrid>
 
       <TableCard
         toolbar={
-          <TableToolbar actions={<SearchField defaultValue={q} placeholder="Search number, company, product…" hidden={{ status: filter }} />}>
-            <div className="scroll-thin -mx-1 flex min-w-0 flex-1 gap-1.5 overflow-x-auto px-1">
-              <FilterChip href={href({ status: undefined })} selected={!filter} count={all}>
-                All
-              </FilterChip>
-              {(Object.keys(QUOTE_STATUS) as QuoteStatusKey[]).map((s) => (
-                <FilterChip key={s} href={href({ status: s })} selected={filter === s} count={sumOf(s)?._count ?? 0}>
-                  {QUOTE_STATUS[s].label}
-                </FilterChip>
-              ))}
-            </div>
-          </TableToolbar>
+          <TableTabs
+            tabs={[
+              { key: "all", label: "All", count: all, selected: !filter, href: href({ status: undefined }) },
+              ...(Object.keys(QUOTE_STATUS) as QuoteStatusKey[]).map((s) => ({ key: s, label: QUOTE_STATUS[s].label, count: sumOf(s)?._count ?? 0, selected: filter === s, href: href({ status: s }) })),
+            ]}
+            actions={<SearchField defaultValue={q} placeholder="Search number, company, product…" hidden={{ status: filter }} />}
+          />
         }
         footer={total > 0 && <Pagination page={page} pageSize={PAGE_SIZE} total={total} href={(p) => href({ page: p })} />}
       >

@@ -19,16 +19,23 @@ export default function SetPasswordForm({ token, minLength }: { token: string; m
           {state.error}
         </Alert>
       )}
-      <Field label="New password" hint={`At least ${minLength} characters. A short sentence is easy to remember and hard to guess.`}>
+      <Field
+        label="New password"
+        hint={
+          <>
+            <span className="mb-1 mt-0.5 flex items-center gap-2">
+              <span className="flex flex-1 gap-1">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <span key={i} className={`h-1 flex-1 rounded-full ${i <= strength ? (strength <= 2 ? "bg-rose-400" : strength === 3 ? "bg-amber-400" : "bg-emerald-500") : "bg-paper-2"}`} />
+                ))}
+              </span>
+              <span className="w-16 text-right text-[11px]">{meter}</span>
+            </span>
+            At least {minLength} characters. A short sentence is easy to remember and hard to guess.
+          </>
+        }
+      >
         <PasswordInput name="password" required minLength={minLength} autoComplete="new-password" autoFocus value={pw} onChange={(e) => setPw(e.target.value)} className="py-2.5" />
-        <div className="mt-1.5 flex items-center gap-2">
-          <div className="flex flex-1 gap-1">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <span key={i} className={`h-1 flex-1 rounded-full ${i <= strength ? (strength <= 2 ? "bg-rose-400" : strength === 3 ? "bg-amber-400" : "bg-emerald-500") : "bg-paper-2"}`} />
-            ))}
-          </div>
-          <span className="w-16 text-right text-[11px] text-slate-500">{meter}</span>
-        </div>
       </Field>
       <Field label="Type it again">
         <PasswordInput name="confirm" required autoComplete="new-password" className="py-2.5" />

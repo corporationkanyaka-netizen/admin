@@ -35,7 +35,7 @@ export default function ResetForm() {
       )}
       <p className="text-sm text-slate-600">First time here, or forgot your password? Enter your work email and we&apos;ll send you a link to set one.</p>
       <Field label="Work email">
-        <Input name="email" type="email" aria-label="Work email" required autoComplete="email" autoFocus defaultValue={state.email} className="py-2.5" />
+        <Input name="email" type="email" required autoComplete="email" autoFocus defaultValue={state.email} className="py-2.5" />
       </Field>
       <SubmitButton pendingText="Sending…" size="lg" className="w-full">
         Email me a link
