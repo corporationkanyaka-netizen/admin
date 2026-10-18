@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { FileText, Inbox, IndianRupee, Mail, MessageCircle, Phone, Plus, Trophy, Truck } from "lucide-react";
+import { FileText, Hourglass, Inbox, IndianRupee, Mail, MessageCircle, Phone, Plus, Trophy, Truck } from "lucide-react";
 import { prisma } from "@/server/db";
 import { requireUser } from "@/server/auth";
+import { can } from "@/lib/permissions";
 import { Avatar, ButtonAnchor, ButtonLink, Card, DescriptionList, Empty, EnquiryBadge, List, ListRow, QuoteBadge, RecordHeader, SplitLayout, Stat, StatGrid } from "@/components/ui";
 import { date, dateTime, inr, kgLabel, phone } from "@/lib/format";
 import { MOVEMENT } from "@/lib/labels";
@@ -13,7 +14,8 @@ import CustomerActions from "./CustomerActions";
 export const metadata: Metadata = { title: "Customer" };
 
 export default async function CustomerPage({ params }: { params: Promise<{ id: string }> }) {
-  await requireUser();
+  const user = await requireUser();
+  const finance = can(user.role, "finance");
   const { id } = await params;
   if (!isUuid(id)) notFound();
 
@@ -57,12 +59,20 @@ export default async function CustomerPage({ params }: { params: Promise<{ id: s
         }
       />
 
-      <StatGrid>
-        <Stat icon={<Inbox className="h-4 w-4" />} label="Enquiries" value={c.enquiries.length} />
-        <Stat icon={<FileText className="h-4 w-4" />} label="Quotations" value={quotes.length} />
-        <Stat icon={<IndianRupee className="h-4 w-4" />} label="Total quoted" value={inr(quoted, 0)} />
-        <Stat icon={<Trophy className="h-4 w-4" />} label="Business won" value={inr(won, 0)} tone={won ? "good" : "default"} />
-      </StatGrid>
+      {finance ? (
+        <StatGrid>
+          <Stat icon={<Inbox className="h-4 w-4" />} label="Enquiries" value={c.enquiries.length} />
+          <Stat icon={<FileText className="h-4 w-4" />} label="Quotations" value={quotes.length} />
+          <Stat icon={<IndianRupee className="h-4 w-4" />} label="Total quoted" value={inr(quoted, 0)} />
+          <Stat icon={<Trophy className="h-4 w-4" />} label="Business won" value={inr(won, 0)} tone={won ? "good" : "default"} />
+        </StatGrid>
+      ) : (
+        <StatGrid cols={3}>
+          <Stat icon={<Inbox className="h-4 w-4" />} label="Enquiries" value={c.enquiries.length} />
+          <Stat icon={<Hourglass className="h-4 w-4" />} label="Open" value={c.enquiries.filter((e) => ["NEW", "CONTACTED", "QUOTED"].includes(e.status)).length} />
+          <Stat icon={<Trophy className="h-4 w-4" />} label="Won" value={c.enquiries.filter((e) => e.status === "WON").length} tone="good" />
+        </StatGrid>
+      )}
 
       <SplitLayout
         asideWidth="sm"
@@ -103,7 +113,7 @@ export default async function CustomerPage({ params }: { params: Promise<{ id: s
                   trailing={
                     <div className="flex flex-col items-end gap-1">
                       <EnquiryBadge status={e.status} />
-                      {e.quotes[0] && (
+                      {finance && e.quotes[0] && (
                         <span className="inline-flex items-center gap-1.5 text-xs">
                           <span className="num text-slate-700">{inr(e.quotes[0].total, 0)}</span>
                           <QuoteBadge status={e.quotes[0].status} />

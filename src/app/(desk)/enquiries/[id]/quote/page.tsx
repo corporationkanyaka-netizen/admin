@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { prisma } from "@/server/db";
-import { requireUser } from "@/server/auth";
+import { requirePermission } from "@/server/auth";
 import { PageHeader } from "@/components/ui";
 import { isUuid } from "@/lib/ids";
 import { todayIst } from "@/lib/format";
@@ -10,7 +10,7 @@ import QuoteBuilder from "./QuoteBuilder";
 export const metadata: Metadata = { title: "New quotation" };
 
 export default async function NewQuotePage({ params }: { params: Promise<{ id: string }> }) {
-  await requireUser();
+  await requirePermission("finance");
   const { id } = await params;
   if (!isUuid(id)) notFound();
 

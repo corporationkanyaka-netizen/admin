@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { ArrowDownLeft, ArrowUpRight, CheckCircle2, CircleDot, FilePlus2, FileText, Mail, MessageCircle, Phone, PlusCircle, StickyNote, type LucideIcon } from "lucide-react";
 import { prisma } from "@/server/db";
 import { requireUser } from "@/server/auth";
+import { can, withoutMoney } from "@/lib/permissions";
 import { Alert, Avatar, ButtonAnchor, ButtonLink, Card, CardLink, DescriptionList, Empty, EnquiryBadge, List, ListRow, QuoteBadge, RecordHeader, SplitLayout, Timeline, TimelineItem } from "@/components/ui";
 import { ACTIVITY, ENQUIRY_STATUS, SOURCE, type EnquiryStatusKey } from "@/lib/labels";
 import { ago, date, dateTime, inr, phone } from "@/lib/format";
@@ -26,7 +27,8 @@ const ACTIVITY_ICON: Record<string, { icon: LucideIcon; tone: string }> = {
 };
 
 export default async function EnquiryPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ done?: string; error?: string }> }) {
-  await requireUser();
+  const user = await requireUser();
+  const finance = can(user.role, "finance");
   const { id } = await params;
   const { done, error } = await searchParams;
   if (!isUuid(id)) notFound();
@@ -82,9 +84,11 @@ export default async function EnquiryPage({ params, searchParams }: { params: Pr
             <ButtonAnchor variant="secondary" href={`https://wa.me/${digits}`}>
               <MessageCircle className="h-4 w-4 text-emerald-600" /> WhatsApp
             </ButtonAnchor>
-            <ButtonLink href={`/enquiries/${e.id}/quote`}>
-              <FilePlus2 className="h-4 w-4" /> New quotation
-            </ButtonLink>
+            {finance && (
+              <ButtonLink href={`/enquiries/${e.id}/quote`}>
+                <FilePlus2 className="h-4 w-4" /> New quotation
+              </ButtonLink>
+            )}
           </>
         }
       />
@@ -120,6 +124,7 @@ export default async function EnquiryPage({ params, searchParams }: { params: Pr
               )}
             </Card>
 
+            {finance && (
             <Card title="Quotations" actions={<CardLink href={`/enquiries/${e.id}/quote`}>+ New</CardLink>} pad={false}>
               {e.quotes.length === 0 ? (
                 <Empty title="No quotation yet" />
@@ -142,6 +147,7 @@ export default async function EnquiryPage({ params, searchParams }: { params: Pr
                 </List>
               )}
             </Card>
+            )}
           </>
         }
       >
@@ -201,7 +207,7 @@ export default async function EnquiryPage({ params, searchParams }: { params: Pr
                       {" "}
                       · {t.a.actor ?? "system"} · {ago(t.a.createdAt)}
                     </span>
-                    {t.a.note && <p className="whitespace-pre-wrap text-slate-600">{t.a.note}</p>}
+                    {t.a.note && <p className="whitespace-pre-wrap text-slate-600">{finance ? t.a.note : withoutMoney(t.a.note)}</p>}
                   </div>
                 </TimelineItem>
               );

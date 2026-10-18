@@ -1,14 +1,17 @@
 import "server-only";
 import { prisma } from "@/server/db";
+import { getCurrentUser } from "@/server/auth";
 import { stockOverview } from "@/server/stock";
+import { can } from "@/lib/permissions";
 import { todayIst } from "@/lib/format";
 import type { EntryData } from "./StockEntryFields";
 
 /** Stock overview plus everything the stock entry form needs (products with live balances, warehouses, customers). */
 export async function stockEntryData() {
-  const [overview, customers] = await Promise.all([
+  const [overview, customers, user] = await Promise.all([
     stockOverview(),
     prisma.customer.findMany({ orderBy: { companyName: "asc" }, take: 500, select: { id: true, companyName: true, name: true } }),
+    getCurrentUser(),
   ]);
   const { warehouses, rows } = overview;
   const entry: EntryData = {
@@ -23,6 +26,7 @@ export async function stockEntryData() {
     warehouses: warehouses.map((w) => ({ id: w.id, name: w.name })),
     customers: customers.map((c) => ({ id: c.id, label: `${c.companyName} · ${c.name}` })),
     today: todayIst(),
+    finance: can(user?.role, "finance"),
   };
   return { ...overview, entry };
 }

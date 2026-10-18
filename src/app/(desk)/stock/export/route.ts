@@ -4,6 +4,7 @@ import { stockOverview } from "@/server/stock";
 import { ledgerWhere } from "@/server/ledger";
 import { MOVEMENT, type MovementKey } from "@/lib/labels";
 import { todayIst } from "@/lib/format";
+import { can } from "@/lib/permissions";
 
 // CSV downloads that open in Excel (and can be handed to the accountant for Tally):
 //   /stock/export            → stock on hand per product and warehouse
@@ -17,7 +18,9 @@ const cell = (v: unknown) => {
 const csv = (rows: unknown[][]) => "﻿" + rows.map((r) => r.map(cell).join(",")).join("\r\n");
 
 export async function GET(request: Request) {
-  if (!(await getCurrentUser())) return new Response("Sign in first", { status: 401 });
+  const user = await getCurrentUser();
+  if (!user) return new Response("Sign in first", { status: 401 });
+  const finance = can(user.role, "finance");
   const sp = Object.fromEntries(new URL(request.url).searchParams);
   const today = todayIst();
 
@@ -28,8 +31,9 @@ export async function GET(request: Request) {
       take: 20_000,
       include: { product: true, warehouse: true },
     });
+    const rateCol = <T,>(v: T) => (finance ? [v] : []);
     const body = csv([
-      ["Date", "Product", "Warehouse", "Entry", "Quantity (kg)", "Bags", "Rate per kg", "Party", "Reference", "Note", "Entered by"],
+      ["Date", "Product", "Warehouse", "Entry", "Quantity (kg)", "Bags", ...rateCol("Rate per kg"), "Party", "Reference", "Note", "Entered by"],
       ...rows.map((m) => {
         const kg = Number(m.quantityKg);
         return [
@@ -39,7 +43,7 @@ export async function GET(request: Request) {
           MOVEMENT[m.type as MovementKey]?.short ?? m.type,
           kg,
           m.product.packKg ? Math.round((kg / Number(m.product.packKg)) * 100) / 100 : "",
-          m.ratePerKg ? Number(m.ratePerKg) : "",
+          ...rateCol(m.ratePerKg ? Number(m.ratePerKg) : ""),
           m.party,
           m.reference,
           m.note,

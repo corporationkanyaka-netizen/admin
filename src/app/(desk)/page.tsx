@@ -1,6 +1,7 @@
 import { ArrowDownToLine, ArrowUpFromLine, FileText, History, Hourglass, Inbox, MessageCircle, Plus, TriangleAlert, Trophy } from "lucide-react";
 import { prisma } from "@/server/db";
 import { requireUser } from "@/server/auth";
+import { can, withoutMoney } from "@/lib/permissions";
 import { stockOverview } from "@/server/stock";
 import { Alert, Avatar, ButtonLink, Card, Empty, List, ListRow, PageHeader, Stat, StatGrid, TextLink } from "@/components/ui";
 import { ACTIVITY, ENQUIRY_STATUS, type EnquiryStatusKey } from "@/lib/labels";
@@ -11,6 +12,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
   const { denied } = await searchParams;
   const month = istMonthStart();
 
+  const finance = can(user.role, "finance");
   const [waiting, waitingCount, openCount, wonThisMonth, quotedThisMonth, enquiriesThisMonth, chats, activity, stock] = await Promise.all([
     prisma.enquiry.findMany({
       where: { status: "NEW" },
@@ -21,7 +23,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
     prisma.enquiry.count({ where: { status: "NEW" } }),
     prisma.enquiry.count({ where: { status: { in: ["CONTACTED", "QUOTED"] } } }),
     prisma.enquiry.count({ where: { status: "WON", updatedAt: { gte: month } } }),
-    prisma.quote.aggregate({ where: { status: { in: ["SENT", "ACCEPTED"] }, createdAt: { gte: month } }, _sum: { total: true }, _count: true }),
+    finance ? prisma.quote.aggregate({ where: { status: { in: ["SENT", "ACCEPTED"] }, createdAt: { gte: month } }, _sum: { total: true }, _count: true }) : null,
     prisma.enquiry.count({ where: { createdAt: { gte: month } } }),
     prisma.whatsAppMessage.findMany({ orderBy: { createdAt: "desc" }, take: 5 }),
     prisma.activity.findMany({ orderBy: { createdAt: "desc" }, take: 8, include: { enquiry: { select: { id: true, reference: true, companyName: true } } } }),
@@ -34,7 +36,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
 
   return (
     <>
-      {denied && <Alert tone="error">That page is for admins only.</Alert>}
+      {denied && <Alert tone="error">You don&apos;t have access to that page. Ask an admin if you need it.</Alert>}
       <PageHeader
         title={`${greeting}, ${user.name.split(" ")[0]}`}
         subtitle="Here's what needs attention today."
@@ -56,7 +58,11 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
       <StatGrid>
         <Stat icon={<Inbox className="h-4 w-4" />} label="Waiting for a reply" value={waitingCount} tone={waitingCount ? "alert" : "good"} hint={overdue ? `${overdue} older than a day` : waitingCount ? "Reply today" : "All caught up"} href="/enquiries?status=NEW" />
         <Stat icon={<Hourglass className="h-4 w-4" />} label="In progress" value={openCount} hint="Contacted or quoted" href="/enquiries?status=open" />
-        <Stat icon={<FileText className="h-4 w-4" />} label="Quoted this month" value={inr(quotedThisMonth._sum.total ?? 0, 0)} hint={`${quotedThisMonth._count} ${quotedThisMonth._count === 1 ? "quotation" : "quotations"} · ${enquiriesThisMonth} ${enquiriesThisMonth === 1 ? "enquiry" : "enquiries"}`} href="/quotes" />
+        {quotedThisMonth ? (
+          <Stat icon={<FileText className="h-4 w-4" />} label="Quoted this month" value={inr(quotedThisMonth._sum.total ?? 0, 0)} hint={`${quotedThisMonth._count} ${quotedThisMonth._count === 1 ? "quotation" : "quotations"} · ${enquiriesThisMonth} ${enquiriesThisMonth === 1 ? "enquiry" : "enquiries"}`} href="/quotes" />
+        ) : (
+          <Stat icon={<FileText className="h-4 w-4" />} label="Enquiries this month" value={enquiriesThisMonth} hint="From the website, phone and WhatsApp" href="/enquiries" />
+        )}
         <Stat icon={<Trophy className="h-4 w-4" />} label="Won this month" value={wonThisMonth} tone={wonThisMonth ? "good" : "default"} hint={low.length ? `${low.length} ${low.length === 1 ? "product" : "products"} low on stock` : "Stock levels OK"} href="/enquiries?status=WON" />
       </StatGrid>
 
@@ -132,7 +138,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
                       <span className="font-normal text-slate-500"> · {a.enquiry.companyName}</span>
                     </>
                   }
-                  subtitle={a.note}
+                  subtitle={a.note && !finance ? withoutMoney(a.note) : a.note}
                   trailing={
                     <div className="text-xs text-slate-500">
                       <div>{ago(a.createdAt)}</div>

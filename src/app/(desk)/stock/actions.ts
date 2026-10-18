@@ -7,6 +7,7 @@ import { recordMovement, StockError } from "@/server/stock";
 import { fieldErrors, movementSchema } from "@/lib/validation";
 import { formValues, type FormState } from "@/lib/form-state";
 import { stockLabel } from "@/lib/format";
+import { can } from "@/lib/permissions";
 
 const SAVED: Record<string, string> = { PURCHASE: "Stock in", SALE: "Stock out", TRANSFER: "Transfer", RETURN: "Return", ADJUSTMENT: "Adjustment", OPENING: "Opening stock" };
 
@@ -14,7 +15,7 @@ export async function recordMovementAction(_prev: FormState, fd: FormData): Prom
   const user = await requireUser();
   const raw = formValues(fd);
   // Empty optional fields arrive as "" — drop them so validation treats them as not given.
-  const cleaned = Object.fromEntries(Object.entries(raw).filter(([, v]) => v !== ""));
+  const cleaned = Object.fromEntries(Object.entries(raw).filter(([k, v]) => v !== "" && (k !== "ratePerKg" || can(user.role, "finance"))));
   const parsed = movementSchema.safeParse(cleaned);
   if (!parsed.success) return { errors: fieldErrors(parsed.error), values: raw };
 

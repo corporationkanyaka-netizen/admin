@@ -12,7 +12,7 @@ import { newEnquiryHref } from "./links";
 
 export type CustomerRow = CustomerDetails & { phone: string; enquiries: number; open: number; won: number; lastEnquiry: string | null };
 
-export default function CustomersTable({ customers, toolbar, footer, emptyTitle }: { customers: CustomerRow[]; toolbar: ReactNode; footer: ReactNode; emptyTitle: string }) {
+export default function CustomersTable({ customers, toolbar, footer, emptyTitle, finance }: { customers: CustomerRow[]; toolbar: ReactNode; footer: ReactNode; emptyTitle: string; finance: boolean }) {
   const router = useRouter();
   const [editing, setEditing] = useState<CustomerRow | null>(null);
   const [deleting, setDeleting] = useState<CustomerRow | null>(null);
@@ -59,7 +59,9 @@ export default function CustomersTable({ customers, toolbar, footer, emptyTitle 
         </>
       ),
     },
-    { key: "won", header: "Business won", align: "right", className: "num font-medium", cell: (c) => (c.won ? inr(c.won, 0) : <span className="text-slate-300">—</span>) },
+    ...(finance
+      ? [{ key: "won", header: "Business won", align: "right", className: "num font-medium", cell: (c) => (c.won ? inr(c.won, 0) : <span className="text-slate-300">—</span>) } satisfies Column<CustomerRow>]
+      : []),
     { key: "last", header: "Last enquiry", align: "right", className: "whitespace-nowrap text-xs text-slate-500", cell: (c) => c.lastEnquiry ?? "—" },
     {
       key: "actions",

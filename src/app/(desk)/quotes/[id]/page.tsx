@@ -3,7 +3,7 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import { CheckCircle2, FileText, Mail, User, XCircle } from "lucide-react";
 import { prisma } from "@/server/db";
-import { requireUser } from "@/server/auth";
+import { requirePermission } from "@/server/auth";
 import { companyInfo } from "@/data/company";
 import { Alert, ButtonLink, Card, Field, IconBadge, QuoteBadge, RecordHeader, SubmitButton, Textarea } from "@/components/ui";
 import PrintButton from "@/components/PrintButton";
@@ -25,7 +25,7 @@ const DONE: Record<string, string> = {
 };
 
 export default async function QuotePage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ done?: string; error?: string }> }) {
-  await requireUser();
+  await requirePermission("finance");
   const { id } = await params;
   const { done, error } = await searchParams;
   if (!isUuid(id)) notFound();

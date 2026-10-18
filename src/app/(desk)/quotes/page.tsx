@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { CheckCircle2, FilePen, FileText, Send, XCircle } from "lucide-react";
 import { prisma } from "@/server/db";
-import { requireUser } from "@/server/auth";
+import { requirePermission } from "@/server/auth";
 import { Avatar, DataTable, Empty, PageHeader, Pagination, QuoteBadge, SearchField, Stat, StatGrid, TableCard, TableTabs, type Column } from "@/components/ui";
 import { QUOTE_STATUS, type QuoteStatusKey } from "@/lib/labels";
 import { date, inr } from "@/lib/format";
@@ -17,7 +17,7 @@ const TILES = [
 ] as const;
 
 export default async function QuotesPage({ searchParams }: { searchParams: Promise<{ status?: string; q?: string; page?: string }> }) {
-  await requireUser();
+  await requirePermission("finance");
   const sp = await searchParams;
   const filter = sp.status && sp.status in QUOTE_STATUS ? (sp.status as QuoteStatusKey) : undefined;
   const q = sp.q?.trim().slice(0, 100) ?? "";

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { prisma } from "@/server/db";
 import { requireUser } from "@/server/auth";
+import { can } from "@/lib/permissions";
 import { PageHeader, Pagination, SearchField, TableTabs } from "@/components/ui";
 import { ago } from "@/lib/format";
 import type { Prisma } from "@/generated/prisma/client";
@@ -10,7 +11,8 @@ export const metadata: Metadata = { title: "Customers" };
 const PAGE_SIZE = 30;
 
 export default async function CustomersPage({ searchParams }: { searchParams: Promise<{ q?: string; show?: string; page?: string }> }) {
-  await requireUser();
+  const user = await requireUser();
+  const finance = can(user.role, "finance");
   const sp = await searchParams;
   const q = sp.q?.trim().slice(0, 100) ?? "";
   const show = sp.show === "open" || sp.show === "won" ? sp.show : undefined;
@@ -42,7 +44,7 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
       skip: (page - 1) * PAGE_SIZE,
       take: PAGE_SIZE,
       include: {
-        enquiries: { select: { status: true, createdAt: true, quotes: { where: { status: "ACCEPTED" }, select: { total: true } } }, orderBy: { createdAt: "desc" } },
+        enquiries: { select: { status: true, createdAt: true, quotes: { where: { status: "ACCEPTED" }, select: { total: true }, take: finance ? undefined : 0 } }, orderBy: { createdAt: "desc" } },
       },
     }),
     prisma.customer.count({ where }),
@@ -60,6 +62,7 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
     <>
       <PageHeader title="Customers" subtitle="Everyone who has enquired — matched by phone number, so each company appears once." />
       <CustomersTable
+        finance={finance}
         emptyTitle={q ? `No customer matches “${q}”` : "No customers here"}
         toolbar={
           <TableTabs

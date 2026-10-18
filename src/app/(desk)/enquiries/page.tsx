@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { ArrowRight, Globe, Inbox, Mail, MessageCircle, Phone, Plus, Store } from "lucide-react";
 import { prisma } from "@/server/db";
 import { requireUser } from "@/server/auth";
+import { can } from "@/lib/permissions";
 import {
   Avatar,
   ButtonLink,
@@ -40,7 +41,8 @@ const PAGE_SIZE = 25;
 const SOURCE_ICON: Record<string, typeof Globe> = { CONTACT_PAGE: Globe, QUOTE_MODAL: Globe, PRODUCT_PAGE: Globe, PHONE: Phone, WHATSAPP: MessageCircle, EMAIL: Mail, WALK_IN: Store, OTHER: Inbox };
 
 export default async function EnquiriesPage({ searchParams }: { searchParams: Promise<{ status?: string; q?: string; page?: string }> }) {
-  await requireUser();
+  const user = await requireUser();
+  const finance = can(user.role, "finance");
   const sp = await searchParams;
   const tab = TABS.find((t) => t.key === sp.status) ?? TABS[0];
   const q = sp.q?.trim().slice(0, 100) ?? "";
@@ -161,7 +163,7 @@ export default async function EnquiriesPage({ searchParams }: { searchParams: Pr
           <IconLink href={`/enquiries/${e.id}`} label={`Open ${e.companyName}`}>
             <ArrowRight className="h-4 w-4" />
           </IconLink>
-          <EnquiryRowActions id={e.id} company={e.companyName} status={e.status} phone={e.phone} />
+          <EnquiryRowActions id={e.id} company={e.companyName} status={e.status} phone={e.phone} finance={finance} />
         </div>
       ),
     },

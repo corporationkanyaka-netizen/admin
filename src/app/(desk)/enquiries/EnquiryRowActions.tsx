@@ -6,7 +6,7 @@ import { ConfirmDialog, OverflowMenu, useServerAction } from "@/components/ui";
 import { setEnquiryStatusAction } from "./actions";
 
 /** ⋮ menu on an enquiry row: reach the customer, quote, or move the enquiry along. */
-export default function EnquiryRowActions({ id, company, status, phone }: { id: string; company: string; status: string; phone: string }) {
+export default function EnquiryRowActions({ id, company, status, phone, finance }: { id: string; company: string; status: string; phone: string; finance: boolean }) {
   const { run, pending } = useServerAction();
   const [spam, setSpam] = useState(false);
   const set = (s: string) => run(() => setEnquiryStatusAction(id, s));
@@ -17,7 +17,7 @@ export default function EnquiryRowActions({ id, company, status, phone }: { id: 
       <OverflowMenu
         label={`More actions for ${company}`}
         items={[
-          { label: "New quotation", icon: FilePlus2, href: `/enquiries/${id}/quote` },
+          ...(finance ? [{ label: "New quotation", icon: FilePlus2, href: `/enquiries/${id}/quote` }] : []),
           { label: "Call", icon: PhoneOutgoing, href: `tel:${phone}`, external: true },
           { label: "WhatsApp", icon: MessageCircle, href: `https://wa.me/${phone.replace(/\D/g, "")}`, external: true },
           "divider",

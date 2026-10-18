@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { requireUser } from "@/server/auth";
+import { requirePermission, requireUser } from "@/server/auth";
 import { ActionError, changeStatus, createStaffEnquiry, logActivity, sendReply } from "@/server/enquiries";
 import { createQuote, sendQuote, setQuoteStatus } from "@/server/quotes";
 import { fieldErrors, newEnquirySchema, quoteSchema, replySchema } from "@/lib/validation";
@@ -65,7 +65,7 @@ export async function replyAction(_prev: FormState, fd: FormData): Promise<FormS
 
 /** Called from the quotation builder with the full quote as JSON. */
 export async function createQuoteAction(enquiryId: string, input: unknown): Promise<{ errors?: Record<string, string>; message?: string }> {
-  const user = await requireUser();
+  const user = await requirePermission("finance");
   const id = uuid.parse(enquiryId);
   const parsed = quoteSchema.safeParse(input);
   if (!parsed.success) return { errors: fieldErrors(parsed.error) };
@@ -87,7 +87,7 @@ export async function createQuoteAction(enquiryId: string, input: unknown): Prom
 }
 
 export async function sendQuoteAction(fd: FormData) {
-  const user = await requireUser();
+  const user = await requirePermission("finance");
   const id = uuid.parse(str(fd, "id"));
   try {
     await sendQuote(id, user, str(fd, "message").trim() || undefined);
@@ -99,7 +99,7 @@ export async function sendQuoteAction(fd: FormData) {
 }
 
 export async function quoteStatusAction(fd: FormData) {
-  const user = await requireUser();
+  const user = await requirePermission("finance");
   const id = uuid.parse(str(fd, "id"));
   const status = z.enum(["ACCEPTED", "REJECTED", "EXPIRED", "CANCELLED"]).parse(str(fd, "status"));
   try {

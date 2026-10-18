@@ -5,6 +5,7 @@ import { cache } from "react";
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { prisma } from "@/server/db";
+import { can, type Permission } from "@/lib/permissions";
 import { sendMail } from "@/server/mailer";
 import { renderAlertEmail } from "@/server/email-layout";
 
@@ -281,11 +282,14 @@ export async function requireUser(): Promise<StaffUser> {
   return user;
 }
 
-export async function requireAdmin(): Promise<StaffUser> {
+/** The signed-in user if their role has `permission`; otherwise back to the dashboard with a notice. */
+export async function requirePermission(permission: Permission): Promise<StaffUser> {
   const user = await requireUser();
-  if (user.role !== "ADMIN") redirect("/?denied=1");
+  if (!can(user.role, permission)) redirect("/?denied=1");
   return user;
 }
+
+export const requireAdmin = () => requirePermission("settings");
 
 export async function signOut() {
   const jar = await cookies();

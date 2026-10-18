@@ -8,7 +8,8 @@ import { kgLabel, shortName, stockLabel } from "@/lib/format";
 export type EntryProduct = { id: string; name: string; packing: string; packKg: number | null; reorderKg: number; balances: Record<string, number> };
 export type EntryWarehouse = { id: string; name: string };
 export type EntryCustomer = { id: string; label: string };
-export type EntryData = { products: EntryProduct[]; warehouses: EntryWarehouse[]; customers: EntryCustomer[]; today: string };
+/** `finance`: the user may see and enter purchase / sale rates. */
+export type EntryData = { products: EntryProduct[]; warehouses: EntryWarehouse[]; customers: EntryCustomer[]; today: string; finance: boolean };
 
 export const ENTRY_TYPES = [
   { key: "PURCHASE", label: "Stock in", hint: "Material received from a supplier", icon: ArrowDownToLine },
@@ -156,7 +157,7 @@ export function StockEntryFields({
       <Field label={type === "PURCHASE" ? "Invoice no. / vehicle no." : type === "SALE" ? "Invoice / challan / vehicle no." : "Reference"} error={e.reference}>
         <Input name="reference" defaultValue={v.reference} />
       </Field>
-      {(type === "PURCHASE" || type === "SALE") && (
+      {data.finance && (type === "PURCHASE" || type === "SALE") && (
         <Field label={type === "PURCHASE" ? "Purchase rate (₹ per kg)" : "Sale rate (₹ per kg)"} error={e.ratePerKg} hint="Optional — for stock value reports.">
           <Input name="ratePerKg" inputMode="decimal" defaultValue={v.ratePerKg} className="num" />
         </Field>

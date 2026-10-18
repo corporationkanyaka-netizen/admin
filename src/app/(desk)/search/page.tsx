@@ -2,13 +2,15 @@ import type { Metadata } from "next";
 import { Boxes, FileText, Inbox, Search, Users } from "lucide-react";
 import { prisma } from "@/server/db";
 import { requireUser } from "@/server/auth";
+import { can } from "@/lib/permissions";
 import { Avatar, Card, Empty, EnquiryBadge, List, ListRow, PageHeader, QuoteBadge, SearchInput } from "@/components/ui";
 import { ago, inr, phone } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Search" };
 
 export default async function SearchPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
-  await requireUser();
+  const user = await requireUser();
+  const finance = can(user.role, "finance");
   const q = (await searchParams).q?.trim().slice(0, 100) ?? "";
   const digits = q.replace(/\D/g, "");
   const has = (field: string) => ({ [field]: { contains: q, mode: "insensitive" as const } });
@@ -27,12 +29,14 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
           where: { OR: [has("companyName"), has("name"), has("email"), has("gstin"), ...(digits.length >= 4 ? [{ phone: { contains: digits } }] : [])] },
           take: 8,
         }),
-        prisma.quote.findMany({
-          where: { OR: [has("quoteNumber"), { enquiry: has("companyName") }] },
-          orderBy: { createdAt: "desc" },
-          take: 8,
-          include: { enquiry: { select: { companyName: true } } },
-        }),
+        finance
+          ? prisma.quote.findMany({
+              where: { OR: [has("quoteNumber"), { enquiry: has("companyName") }] },
+              orderBy: { createdAt: "desc" },
+              take: 8,
+              include: { enquiry: { select: { companyName: true } } },
+            })
+          : [],
         prisma.product.findMany({ where: { OR: [has("name"), has("make")] }, take: 8 }),
       ])
     : [[], [], [], []];

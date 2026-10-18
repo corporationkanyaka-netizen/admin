@@ -23,6 +23,7 @@ import {
   useServerAction,
   type Column,
 } from "@/components/ui";
+import { ROLE_INFO } from "@/lib/permissions";
 import { deleteUserAction, saveUserAction, sendPasswordLinkAction, setUserActiveAction } from "../actions";
 
 export type UserRow = {
@@ -238,8 +239,8 @@ function UserDialog({ user, isSelf, onClose }: { user: UserRow | null; isSelf: b
               disabled={isSelf}
               defaultValue={v.role ?? user?.role ?? "STAFF"}
               options={[
-                { value: "STAFF", title: "Staff", description: "Enquiries, quotations, customers and stock." },
-                { value: "ADMIN", title: "Admin", description: "Everything, plus products and users." },
+                { value: "STAFF", title: ROLE_INFO.STAFF.label, description: ROLE_INFO.STAFF.summary },
+                { value: "ADMIN", title: ROLE_INFO.ADMIN.label, description: ROLE_INFO.ADMIN.summary },
               ]}
             />
             {isSelf && <input type="hidden" name="role" value="ADMIN" />}

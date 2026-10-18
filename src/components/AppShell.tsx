@@ -28,31 +28,34 @@ import {
 import Logo from "./Logo";
 import { SnackbarProvider } from "./ui";
 import { initials } from "@/lib/format";
+import { can, type Permission } from "@/lib/permissions";
 
 type User = { name: string; email: string; role: string };
 type Counts = { newEnquiries: number; chatsToday: number; lowStock: number };
 
-const NAV = [
+type NavItem = { href: string; label: string; icon: typeof Inbox; count?: keyof Counts; alert?: boolean; permission?: Permission };
+
+const NAV: { title: string; permission?: Permission; items: NavItem[] }[] = [
   {
     title: "Sales",
     items: [
       { href: "/", label: "Dashboard", icon: LayoutDashboard },
-      { href: "/enquiries", label: "Enquiries", icon: Inbox, count: "newEnquiries" as const },
-      { href: "/quotes", label: "Quotations", icon: FileText },
+      { href: "/enquiries", label: "Enquiries", icon: Inbox, count: "newEnquiries" },
+      { href: "/quotes", label: "Quotations", icon: FileText, permission: "finance" },
       { href: "/customers", label: "Customers", icon: Users },
-      { href: "/chats", label: "Website chats", icon: MessageCircle, count: "chatsToday" as const },
+      { href: "/chats", label: "Website chats", icon: MessageCircle, count: "chatsToday" },
     ],
   },
   {
     title: "Stock",
     items: [
-      { href: "/stock", label: "Stock on hand", icon: Boxes, count: "lowStock" as const, alert: true },
+      { href: "/stock", label: "Stock on hand", icon: Boxes, count: "lowStock", alert: true },
       { href: "/stock/ledger", label: "Stock register", icon: ScrollText },
     ],
   },
   {
     title: "Settings",
-    admin: true,
+    permission: "settings",
     items: [
       { href: "/settings/products", label: "Products", icon: Package },
       { href: "/settings/users", label: "Users", icon: UserCog },
@@ -136,15 +139,15 @@ export default function AppShell({ user, counts, signOut, children }: { user: Us
 
   const nav = (compact: boolean) => (
     <nav className="scroll-thin flex-1 overflow-y-auto px-2 py-2">
-      {NAV.filter((g) => !g.admin || user.role === "ADMIN").map((g, gi) => (
+      {NAV.filter((g) => !g.permission || can(user.role, g.permission)).map((g, gi) => (
         <div key={g.title} className={gi ? "mt-2 border-t border-line pt-2" : ""}>
           {!compact && <div className="px-3 pb-1 pt-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">{g.title}</div>}
           <ul className="space-y-0.5">
-            {g.items.map((item) => {
+            {g.items.filter((item) => !item.permission || can(user.role, item.permission)).map((item) => {
               const Icon = item.icon;
               const active = isActive(item.href);
-              const count = "count" in item && item.count ? counts[item.count] : 0;
-              const alert = "alert" in item && item.alert;
+              const count = item.count ? counts[item.count] : 0;
+              const alert = item.alert;
               return (
                 <li key={item.href}>
                   <Link
